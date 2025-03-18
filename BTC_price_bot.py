@@ -3,7 +3,7 @@ import requests
 import logging
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackContext
 
 # Load environment variables from .env file
 load_dotenv()
@@ -55,3 +55,35 @@ def get_btc_price():
         return {"USD": binance_price}  # Binance provides only USD price
 
     return None  # Return None if both APIs fail
+
+
+# Function to handle /price command
+async def price(update: Update, context: CallbackContext) -> None:
+    price_data = get_btc_price()
+
+    if not price_data:
+        await update.message.reply_text("❌ Failed to fetch BTC price. Please try again later.")
+        return
+
+    # Formatting the price response
+    message = "📊 *Current Bitcoin (BTC) Prices:*\n"
+    for currency, value in price_data.items():
+        message += f"💰 *{currency}:* {value:,}\n"  # Adds thousands separator
+
+    await update.message.reply_text(message, parse_mode="Markdown")
+
+
+# Function to start the bot
+def main():
+    # Create application instance with the bot token
+    app = Application.builder().token(TOKEN).build()
+
+    # Register command handlers
+    app.add_handler(CommandHandler("price", price))
+
+    # Start polling for messages
+    print("🚀 Bot is running... Press Ctrl+C to stop.")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
