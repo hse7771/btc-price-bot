@@ -1,5 +1,6 @@
 import os
-import requests
+import asyncio
+import aiohttp
 import logging
 from dotenv import load_dotenv
 from telegram import Update
@@ -17,49 +18,80 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=lo
 # List of currencies we will support
 CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP"]
 
+# Currency conversion API (Replace with a real API)
+CURRENCY_CONVERSION_API = "https://api.exchangerate-api.com/v4/latest/USD"
+BINANCE_API = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 
-# Function to fetch BTC price from Binance
-def get_price_binance():
-    url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+
+async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict | None:
+    """Helper function to fetch JSON data from an API asynchronously."""
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an error for HTTP failures
-        data = response.json()
-        return float(data["price"])  # Return BTC price in USD
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Binance API failed: {e}")
-        return None  # Return None if Binance API is unavailable
+        async with session.get(url, timeout=5) as response:
+            response.raise_for_status()
+            return await response.json()
+    except aiohttp.ClientError as e:
+        logging.error(f"API request failed: {url} | Error: {e}")
+        return None
 
 
-# Function to fetch BTC price from CoinGecko (supports multiple currencies)
-def get_price_coingecko():
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,rub,eur,cad,gbp"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        return data["bitcoin"]  # Returns a dictionary with multiple currency values
-    except requests.exceptions.RequestException as e:
-        logging.error(f"CoinGecko API failed: {e}")
-        return None  # Return None if CoinGecko API is unavailable
+async def get_price_binance(session: aiohttp.ClientSession) -> dict | None:
+    """Fetch BTC price from Binance (USD only)."""
+    data = await fetch_json(session, BINANCE_API)
+
+    if data and "price" in data:
+        return {"usd": float(data["price"])}  # Binance returns only USD
+    return None
 
 
-# Function to get BTC price with failover mechanism
-def get_btc_price():
-    coingecko_data = get_price_coingecko()
-    if coingecko_data:
-        return coingecko_data  # If CoinGecko works, return its data
+async def get_price_coingecko(session: aiohttp.ClientSession) -> dict | None:
+    """Fetch BTC price from CoinGecko (multiple currencies)."""
+    data = await fetch_json(session, COINGECKO_API)
 
-    binance_price = get_price_binance()
-    if binance_price:
-        return {"USD": binance_price}  # Binance provides only USD price
+    if data and "bitcoin" in data:
+        return data["bitcoin"]
+    return None
 
-    return None  # Return None if both APIs fail
+
+async def get_currency_conversion_rates(session: aiohttp.ClientSession) -> dict | None:
+    """Fetch latest exchange rates for USD to other currencies."""
+    data = await fetch_json(session, CURRENCY_CONVERSION_API)
+
+    if data and "rates" in data:
+        return {currency: data["rates"].get(currency.upper(), None) for currency in CURRENCIES}
+    return None
+
+
+async def get_btc_price() -> dict | None:
+    """Get BTC price from CoinGecko or Binance with failover. Fetch exchange rates in parallel."""
+    async with aiohttp.ClientSession() as session:
+        # Start fetching all data in parallel
+        coingecko_task = asyncio.create_task(get_price_coingecko(session))
+        binance_task = asyncio.create_task(get_price_binance(session))
+        exchange_rates_task = asyncio.create_task(get_currency_conversion_rates(session))
+
+        # Wait for CoinGecko result first
+        coingecko_price = await coingecko_task
+        if coingecko_price:
+            return coingecko_price  # Return if CoinGecko succeeded
+
+        # If CoinGecko failed, wait for Binance price
+        binance_price = await binance_task
+        exchange_rates = await exchange_rates_task  # Wait for exchange rates too
+
+        if binance_price and exchange_rates:
+            return {
+                currency: binance_price["usd"] * exchange_rates[currency]
+                if exchange_rates[currency] else None
+                for currency in CURRENCIES
+            }
+
+    return None  # If both APIs fail, return None
 
 
 # Function to handle /price command
 async def price(update: Update, context: CallbackContext) -> None:
-    price_data = get_btc_price()
+    price_data = await get_btc_price()
 
     if not price_data:
         await update.message.reply_text("❌ Failed to fetch BTC price. Please try again later.")
