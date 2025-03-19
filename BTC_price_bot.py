@@ -72,6 +72,16 @@ async def get_btc_price() -> dict | None:
     return None  # If both APIs fail, return None
 
 
+# Function to format the price response message
+def format_price_message(price_data):
+    """Formats the BTC price message."""
+    message = "📊 *Current Bitcoin (BTC) Prices:*\n"
+    for currency in CURRENCIES:
+        if currency.lower() in price_data:
+            message += f"💰 *{currency.upper()}:* {price_data[currency.lower()]:,}\n"  # Adds thousands separator
+    return message
+
+
 # Function to handle /price command
 async def price(update: Update, context: CallbackContext) -> None:
     price_data = await get_btc_price()
@@ -79,11 +89,8 @@ async def price(update: Update, context: CallbackContext) -> None:
     if not price_data:
         await update.message.reply_text("❌ Failed to fetch BTC price. Please try again later.")
         return
-
     # Formatting the price response
-    message = "📊 *Current Bitcoin (BTC) Prices:*\n"
-    for currency, value in price_data.items():
-        message += f"💰 *{currency}:* {value:,}\n"  # Adds thousands separator
+    message = format_price_message(price_data)
 
     await update.message.reply_text(message, parse_mode="Markdown")
 
