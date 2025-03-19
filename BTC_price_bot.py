@@ -16,11 +16,8 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # List of currencies we will support
-CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP"]
-
-# Currency conversion API (Replace with a real API)
-CURRENCY_CONVERSION_API = "https://api.exchangerate-api.com/v4/latest/USD"
-BINANCE_API = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "USDT"]
+BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 
 
@@ -35,12 +32,14 @@ async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict | None:
         return None
 
 
-async def get_price_binance(session: aiohttp.ClientSession) -> dict | None:
-    """Fetch BTC price from Binance (USD only)."""
-    data = await fetch_json(session, BINANCE_API)
+async def get_price_blockchain(session: aiohttp.ClientSession) -> dict | None:
+    """Fetch BTC price from Blockchain (multiple currencies)."""
+    data = await fetch_json(session, BLOCKCHAIN_API)
 
-    if data and "price" in data:
-        return {"usd": float(data["price"])}  # Binance returns only USD
+    if data:
+        prices = {currency.lower(): round(info['last']) for currency, info in data.items() if
+                  currency in CURRENCIES}
+        return prices
     return None
 
 
@@ -53,38 +52,22 @@ async def get_price_coingecko(session: aiohttp.ClientSession) -> dict | None:
     return None
 
 
-async def get_currency_conversion_rates(session: aiohttp.ClientSession) -> dict | None:
-    """Fetch latest exchange rates for USD to other currencies."""
-    data = await fetch_json(session, CURRENCY_CONVERSION_API)
-
-    if data and "rates" in data:
-        return {currency: data["rates"].get(currency.upper(), None) for currency in CURRENCIES}
-    return None
-
-
 async def get_btc_price() -> dict | None:
-    """Get BTC price from CoinGecko or Binance with failover. Fetch exchange rates in parallel."""
+    """Get BTC price from CoinGecko or Blockchain with failover. Fetch exchange rates in parallel."""
     async with aiohttp.ClientSession() as session:
         # Start fetching all data in parallel
         coingecko_task = asyncio.create_task(get_price_coingecko(session))
-        binance_task = asyncio.create_task(get_price_binance(session))
-        exchange_rates_task = asyncio.create_task(get_currency_conversion_rates(session))
+        blockchain_task = asyncio.create_task(get_price_blockchain(session))
 
         # Wait for CoinGecko result first
         coingecko_price = await coingecko_task
         if coingecko_price:
             return coingecko_price  # Return if CoinGecko succeeded
 
-        # If CoinGecko failed, wait for Binance price
-        binance_price = await binance_task
-        exchange_rates = await exchange_rates_task  # Wait for exchange rates too
-
-        if binance_price and exchange_rates:
-            return {
-                currency: binance_price["usd"] * exchange_rates[currency]
-                if exchange_rates[currency] else None
-                for currency in CURRENCIES
-            }
+        # If CoinGecko failed, wait for Blockchain price
+        blockchain_price = await blockchain_task
+        if blockchain_price:
+            return blockchain_price
 
     return None  # If both APIs fail, return None
 
