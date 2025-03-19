@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 import logging
 from dotenv import load_dotenv
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext
 
 # Load environment variables from .env file
@@ -95,12 +95,33 @@ async def price(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(message, parse_mode="Markdown")
 
 
+# Handle /start command
+async def start(update: Update, context: CallbackContext) -> None:
+    """Handles the /start command and sends a welcome message with buttons."""
+    welcome_message = (
+        "👋 *Hello! Welcome to the Bitcoin Price Bot.*\n\n"
+        "Here’s what I can do for you:\n"
+        "🔹 Fetch live Bitcoin prices\n"
+        "🔹 Support multiple currencies\n\n"
+        "👇 Choose an option:"
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("📊 Price", callback_data="get_price")],
+        [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(welcome_message, parse_mode="Markdown", reply_markup=reply_markup)
+
+
 # Function to start the bot
 def main():
     # Create application instance with the bot token
     app = Application.builder().token(TOKEN).build()
 
     # Register command handlers
+    app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("price", price))
 
     # Start polling for messages
