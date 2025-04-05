@@ -86,42 +86,27 @@ def format_price_message(price_data: dict) -> str:
     message += f"\n🕒 Last updated at: `{now}`"
     return message
 
+# Function-helper for price command and price button functions
+async def send_price_message(target, context: CallbackContext):
+    price_data = await get_btc_price()
+    if not price_data:
+        await target.reply_text("❌ Failed to fetch BTC price. Please try again later.")
+        return
+
+    message = format_price_message(price_data)
+    keyboard = [[InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await target.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
+
 
 # Function to handle /price command
 async def price_command(update: Update, context: CallbackContext) -> None:
-    price_data = await get_btc_price()
+    await send_price_message(update.message, context)
 
-    if not price_data:
-        await update.message.reply_text("❌ Failed to fetch BTC price. Please try again later.")
-        return
-    # Formatting the price response
-    message = format_price_message(price_data)
-
-    # Add refresh button
-    keyboard = [
-        [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
-
-
+# Function to handle price button click
 async def price_button_click(update: Update, context: CallbackContext) -> None:
-    price_data = await get_btc_price()
-
-    if not price_data:
-        await update.callback_query.message.reply_text("❌ Failed to fetch BTC price. Please try again later.")
-        return
-
-    message = format_price_message(price_data)
-
-    # Add refresh button
-    keyboard = [
-        [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.callback_query.message.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
+    await send_price_message(update.callback_query.message, context)
 
 
 async def refresh_price_click(update: Update, context: CallbackContext) -> None:
