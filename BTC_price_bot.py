@@ -4,7 +4,7 @@ import aiohttp
 import logging
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler
 
 # Load environment variables from .env file
 load_dotenv()
@@ -83,7 +83,7 @@ def format_price_message(price_data):
 
 
 # Function to handle /price command
-async def price(update: Update, context: CallbackContext) -> None:
+async def price_command(update: Update, context: CallbackContext) -> None:
     price_data = await get_btc_price()
 
     if not price_data:
@@ -93,6 +93,17 @@ async def price(update: Update, context: CallbackContext) -> None:
     message = format_price_message(price_data)
 
     await update.message.reply_text(message, parse_mode="Markdown")
+
+
+async def price_button_click(update: Update, context: CallbackContext) -> None:
+    price_data = await get_btc_price()
+
+    if not price_data:
+        await update.callback_query.message.reply_text("❌ Failed to fetch BTC price. Please try again later.")
+        return
+
+    message = format_price_message(price_data)
+    await update.callback_query.message.reply_text(message, parse_mode="Markdown")
 
 
 # Handle /start command
@@ -115,6 +126,24 @@ async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(welcome_message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
+# Map callback_data to handlers
+BUTTON_HANDLERS = {
+    "get_price": price_button_click,
+}
+
+
+async def button_click_handler(update: Update, context: CallbackContext) -> None:
+    """Handles button press for 📊 Price."""
+    query = update.callback_query
+    await query.answer()  # Acknowledge button press to Telegram
+
+    handler = BUTTON_HANDLERS.get(query.data)
+    if handler:
+        await handler(update, context)
+    else:
+        await query.edit_message_text("❓ Unknown action.")
+
+
 # Function to start the bot
 def main():
     # Create application instance with the bot token
@@ -122,7 +151,8 @@ def main():
 
     # Register command handlers
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("price", price))
+    app.add_handler(CommandHandler("price", price_command))
+    app.add_handler(CallbackQueryHandler(button_click_handler))
 
     # Start polling for messages
     print("🚀 Bot is running... Press Ctrl+C to stop.")
