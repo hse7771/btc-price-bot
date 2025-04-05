@@ -2,6 +2,7 @@ import os
 import asyncio
 import aiohttp
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler
@@ -73,12 +74,16 @@ async def get_btc_price() -> dict | None:
 
 
 # Function to format the price response message
-def format_price_message(price_data):
-    """Formats the BTC price message."""
+def format_price_message(price_data: dict) -> str:
+    """Formats the BTC price message with timestamp."""
     message = "📊 *Current Bitcoin (BTC) Prices:*\n"
     for currency in CURRENCIES:
         if currency.lower() in price_data:
-            message += f"💰 *{currency.upper()}:* {price_data[currency.lower()]:,}\n"  # Adds thousands separator
+            message += f"💰 *{currency.upper()}:* {price_data[currency.lower()]:,}\n"
+
+    # Add timestamp (HH:MM:SS)
+    now = datetime.now().strftime("%H:%M:%S")
+    message += f"\n🕒 Last updated at: `{now}`"
     return message
 
 
