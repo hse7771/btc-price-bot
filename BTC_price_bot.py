@@ -92,7 +92,13 @@ async def price_command(update: Update, context: CallbackContext) -> None:
     # Formatting the price response
     message = format_price_message(price_data)
 
-    await update.message.reply_text(message, parse_mode="Markdown")
+    # Add refresh button
+    keyboard = [
+        [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 async def price_button_click(update: Update, context: CallbackContext) -> None:
@@ -103,7 +109,32 @@ async def price_button_click(update: Update, context: CallbackContext) -> None:
         return
 
     message = format_price_message(price_data)
-    await update.callback_query.message.reply_text(message, parse_mode="Markdown")
+
+    # Add refresh button
+    keyboard = [
+        [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.callback_query.message.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
+
+
+async def refresh_price_click(update: Update, context: CallbackContext) -> None:
+    price_data = await get_btc_price()
+
+    if not price_data:
+        await update.callback_query.edit_message_text("❌ Failed to refresh BTC price.")
+        return
+
+    message = format_price_message(price_data)
+
+    keyboard = [
+        [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.callback_query.edit_message_text(message, parse_mode="Markdown", reply_markup=reply_markup)
+
 
 
 # Handle /start command
@@ -129,6 +160,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 # Map callback_data to handlers
 BUTTON_HANDLERS = {
     "get_price": price_button_click,
+    "refresh_price": refresh_price_click,
 }
 
 
