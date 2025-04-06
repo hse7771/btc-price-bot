@@ -76,12 +76,13 @@ Using a structured branching strategy helps maintain a clean and manageable Git 
 ### 2️⃣ **Feature Branches**
 - Use `feature/<feature-name>` for new features.
 - Example: `feature/add-user-authentication`
-- Merge into `develop` when complete.
+- Rebase onto `develop` before merging.
+- Merge into `develop` using a fast-forward or Pull Request.
 
 ### 3️⃣ **Bug Fixes**
 - Use `bugfix/<bug-description>` for fixing bugs in `develop`.
 - Example: `bugfix/fix-login-error`
-- Merge into `develop`.
+- Rebase onto `develop` and merge into `develop`.
 
 ### 4️⃣ **Release Branches**
 - Use `release/<version>` for preparing a new release.
@@ -102,14 +103,21 @@ git checkout -b feature/add-payment-gateway
 git add .
 git commit -m "feat(payment): integrate new payment gateway"
 
-# Push to remote
+# Rebase onto latest develop to keep history clean
+git fetch origin
+git rebase origin/develop
+
+# Push rebased branch
 git push origin feature/add-payment-gateway
 
-# After completing, merge into develop
+# Merge into develop (fast-forward preferred)
 git checkout develop
 git merge feature/add-payment-gateway
+
 git push origin develop
 ```
+
+🔁 **Alternatively, you can open a Pull Request (PR)** into `develop` after pushing the rebased branch.
 
 ---
 
