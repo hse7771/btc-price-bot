@@ -160,6 +160,19 @@ async def set_currency(update: Update, context: CallbackContext) -> None:
     )
 
 
+async def toggle_currency(update: Update, context: CallbackContext, currency: str) -> None:
+    user_id = update.effective_user.id
+    prefs = user_currency_preferences.setdefault(user_id, [])
+
+    if currency in prefs:
+        prefs.remove(currency)
+    else:
+        prefs.append(currency)
+
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_reply_markup(reply_markup=build_currency_keyboard(user_id))
+
+
 # Handle /start command
 async def start(update: Update, context: CallbackContext) -> None:
     """Handles the /start command and sends a welcome message with buttons."""
@@ -185,6 +198,12 @@ async def start(update: Update, context: CallbackContext) -> None:
 BUTTON_HANDLERS = {
     "get_price": price_button_click,
     "refresh_price": refresh_price_click,
+    "toggle_USD": lambda u, c: toggle_currency(u, c, "USD"),
+    "toggle_EUR": lambda u, c: toggle_currency(u, c, "EUR"),
+    "toggle_RUB": lambda u, c: toggle_currency(u, c, "RUB"),
+    "toggle_GBP": lambda u, c: toggle_currency(u, c, "GBP"),
+    "toggle_CAD": lambda u, c: toggle_currency(u, c, "CAD"),
+    "toggle_USDT": lambda u, c: toggle_currency(u, c, "USDT"),
 }
 
 
