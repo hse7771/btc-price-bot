@@ -148,6 +148,17 @@ def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
 
     return InlineKeyboardMarkup(buttons)
 
+# Handle /set_currency command
+async def set_currency(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    # Initialize if not already
+    user_currency_preferences.setdefault(user_id, [])
+
+    await update.message.reply_text(
+        "💱 Select your preferred currencies (toggle below):",
+        reply_markup=build_currency_keyboard(user_id)
+    )
+
 
 # Handle /start command
 async def start(update: Update, context: CallbackContext) -> None:
@@ -156,7 +167,8 @@ async def start(update: Update, context: CallbackContext) -> None:
         "👋 *Hello! Welcome to the Bitcoin Price Bot.*\n\n"
         "Here’s what I can do for you:\n"
         "🔹 Fetch live Bitcoin prices\n"
-        "🔹 Support multiple currencies\n\n"
+        "🔹 Support multiple currencies\n"
+        "🔹 Support currency filter\n\n"
         "👇 Choose an option:"
     )
 
@@ -196,6 +208,7 @@ def main():
     # Register command handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("price", price_command))
+    app.add_handler(CommandHandler("set_currency", set_currency))
     app.add_handler(CallbackQueryHandler(button_click_handler))
 
     # Start polling for messages
