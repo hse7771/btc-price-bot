@@ -76,26 +76,32 @@ async def get_btc_price() -> dict | None:
 
 
 # Function to format the price response message
-def format_price_message(price_data: dict) -> str:
+def format_price_message(price_data: dict, user_id: int) -> str:
     """Formats the BTC price message with timestamp."""
+    preferred = user_currency_preferences.get(user_id)
+    currencies = preferred or CURRENCIES
+
     message = "📊 *Current Bitcoin (BTC) Prices:*\n"
-    for currency in CURRENCIES:
+    for currency in currencies:
         if currency.lower() in price_data:
             message += f"💰 *{currency.upper()}:* {price_data[currency.lower()]:,}\n"
 
-    # Add timestamp (HH:MM:SS)
     now = datetime.now().strftime("%H:%M:%S")
     message += f"\n🕒 Last updated at: `{now}`"
     return message
 
+
 # Function-helper for price command and price button functions
-async def send_price_message(target, context: CallbackContext):
+async def send_price_message(update: Update, context: CallbackContext):
     price_data = await get_btc_price()
+    user_id = update.effective_user.id
+    target = update.message or update.callback_query.message
+
     if not price_data:
         await target.reply_text("❌ Failed to fetch BTC price. Please try again later.")
         return
 
-    message = format_price_message(price_data)
+    message = format_price_message(price_data, user_id)
     keyboard = [[InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -104,21 +110,22 @@ async def send_price_message(target, context: CallbackContext):
 
 # Function to handle /price command
 async def price_command(update: Update, context: CallbackContext) -> None:
-    await send_price_message(update.message, context)
+    await send_price_message(update, context)
 
 # Function to handle price button click
 async def price_button_click(update: Update, context: CallbackContext) -> None:
-    await send_price_message(update.callback_query.message, context)
+    await send_price_message(update, context)
 
 
 async def refresh_price_click(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
     price_data = await get_btc_price()
 
     if not price_data:
         await update.callback_query.edit_message_text("❌ Failed to refresh BTC price.")
         return
 
-    message = format_price_message(price_data)
+    message = format_price_message(price_data, user_id)
 
     keyboard = [
         [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]
@@ -142,7 +149,7 @@ def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
 
     # Done + Clear row
     buttons.append([
-        InlineKeyboardButton("✅ Done", callback_data="currency_done"),
+        InlineKeyboardButton("❌ Close", callback_data="close_menu"),
         InlineKeyboardButton("🗑️ Clear", callback_data="currency_clear")
     ])
 
@@ -224,7 +231,7 @@ BUTTON_HANDLERS = {
     "toggle_GBP": lambda u, c: toggle_currency(u, c, "GBP"),
     "toggle_CAD": lambda u, c: toggle_currency(u, c, "CAD"),
     "toggle_USDT": lambda u, c: toggle_currency(u, c, "USDT"),
-    "currency_done": confirm_currency_selection,
+    "close_menu": confirm_currency_selection,
     "currency_clear": clear_currency_selection,
 }
 
