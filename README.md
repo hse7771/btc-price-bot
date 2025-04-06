@@ -159,6 +159,52 @@ git commit --amend
 
 ---
 
+## 🧩 **Handling Mistaken Changes on the Wrong Branch**
+
+Sometimes you might accidentally make changes on a feature branch that belong on the base branch (e.g., `develop`). For example, you updated `README.md` while working on a feature, but now want to commit that change to `develop` instead.
+
+### ✅ Goal
+- Move only `README.md` changes to the base branch
+- Keep other in-progress changes on the current feature branch
+
+### 🛠 Steps
+
+1. **Stage only the file you want to move:**
+```bash
+git add README.md
+```
+
+2. **Stash only the staged file:**
+```bash
+git stash push -m "Move README to develop" --staged
+```
+
+3. **Switch to the base branch (e.g., `develop`):**
+```bash
+git checkout develop
+```
+
+4. **Apply the stashed change:**
+```bash
+git stash pop
+```
+
+5. **Commit the change in the correct branch:**
+```bash
+git add README.md
+git commit -m "docs(readme): update commit and branching guide"
+git push origin develop
+```
+
+6. **Return to your feature branch to continue working:**
+```bash
+git checkout feature/your-branch
+```
+
+This avoids mixing responsibilities between branches and keeps your history clean and focused.
+
+---
+
 ## 🚀 **Editing Past Commits**
 If you need to edit an earlier commit message:
 
