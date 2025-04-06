@@ -173,6 +173,26 @@ async def toggle_currency(update: Update, context: CallbackContext, currency: st
     await update.callback_query.edit_message_reply_markup(reply_markup=build_currency_keyboard(user_id))
 
 
+async def confirm_currency_selection(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    selected = user_currency_preferences.get(user_id, [])
+    if not selected:
+        await update.callback_query.answer("⚠️ You must select at least one currency.", show_alert=True)
+        return
+
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(
+        f"✅ Saved! You selected: {', '.join(selected)}"
+    )
+
+
+async def clear_currency_selection(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    user_currency_preferences[user_id] = []
+    await update.callback_query.answer("🗑️ Cleared!")
+    await update.callback_query.edit_message_reply_markup(reply_markup=build_currency_keyboard(user_id))
+
+
 # Handle /start command
 async def start(update: Update, context: CallbackContext) -> None:
     """Handles the /start command and sends a welcome message with buttons."""
@@ -204,6 +224,8 @@ BUTTON_HANDLERS = {
     "toggle_GBP": lambda u, c: toggle_currency(u, c, "GBP"),
     "toggle_CAD": lambda u, c: toggle_currency(u, c, "CAD"),
     "toggle_USDT": lambda u, c: toggle_currency(u, c, "USDT"),
+    "currency_done": confirm_currency_selection,
+    "currency_clear": clear_currency_selection,
 }
 
 
