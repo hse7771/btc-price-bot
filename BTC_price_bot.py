@@ -181,16 +181,33 @@ async def toggle_currency(update: Update, context: CallbackContext, currency: st
 
 
 async def confirm_currency_selection(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
     user_id = update.effective_user.id
     selected = user_currency_preferences.get(user_id, [])
-    if not selected:
-        await update.callback_query.answer("⚠️ You must select at least one currency.", show_alert=True)
-        return
 
-    await update.callback_query.answer()
-    await update.callback_query.edit_message_text(
-        f"✅ Saved! You selected: {', '.join(selected)}"
-    )
+    # If no currencies selected — default to all
+    if not selected:
+        user_currency_preferences[user_id] = CURRENCIES.copy()
+        msg = (
+            "✅ *No currencies were selected.*\n"
+            "All currencies have been selected by default.\n\n"
+            "You can now check live BTC prices using these currencies."
+        )
+    else:
+        msg = (
+            f"✅ *Preferences saved!*\n"
+            f"You selected: {', '.join(selected)}\n\n"
+            "You can now check live BTC prices using these currencies."
+        )
+
+    await query.answer()
+
+    # Add a 📊 Check Price button
+    keyboard = [[InlineKeyboardButton("📊 Check Price", callback_data="get_price")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # Replace the currency menu with confirmation + price button
+    await query.edit_message_text(msg, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 async def clear_currency_selection(update: Update, context: CallbackContext) -> None:
