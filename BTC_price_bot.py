@@ -21,6 +21,8 @@ CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "USDT"]
 BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 
+user_currency_preferences: dict[int, list[str]] = {}
+
 
 async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict | None:
     """Helper function to fetch JSON data from an API asynchronously."""
@@ -125,6 +127,26 @@ async def refresh_price_click(update: Update, context: CallbackContext) -> None:
 
     await update.callback_query.edit_message_text(message, parse_mode="Markdown", reply_markup=reply_markup)
 
+
+def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    selected = set(user_currency_preferences.get(user_id, []))
+    buttons = []
+
+    # Currency toggle buttons (in rows of 2)
+    for i in range(0, len(CURRENCIES), 2):
+        row = []
+        for currency in CURRENCIES[i:i+2]:
+            label = "✅" if currency in selected else "☑️"
+            row.append(InlineKeyboardButton(f"{label} {currency}", callback_data=f"toggle_{currency}"))
+        buttons.append(row)
+
+    # Done + Clear row
+    buttons.append([
+        InlineKeyboardButton("✅ Done", callback_data="currency_done"),
+        InlineKeyboardButton("🗑️ Clear", callback_data="currency_clear")
+    ])
+
+    return InlineKeyboardMarkup(buttons)
 
 
 # Handle /start command
