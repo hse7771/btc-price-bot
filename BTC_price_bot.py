@@ -232,7 +232,7 @@ async def help_command(update: Update, context: CallbackContext) -> None:
 
 
 # Handle /start command
-async def start(update: Update, context: CallbackContext) -> None:
+async def start_command(update: Update, context: CallbackContext) -> None:
     """Handles the /start command and sends a welcome message with buttons."""
     welcome_message = (
         "👋 *Hello! Welcome to the Bitcoin Price Bot.*\n\n"
@@ -300,7 +300,7 @@ def main():
     app = Application.builder().token(TOKEN).build()
 
     # Register command handlers
-    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("price", get_price_command_click))
     app.add_handler(CommandHandler("set_currency", set_currency_command_click))
