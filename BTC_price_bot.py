@@ -96,10 +96,10 @@ async def get_price_command_click(update: Update, context: CallbackContext):
     price_data = await get_btc_price()
     user_id = update.effective_user.id
 
-    target = update.message or update.callback_query.message # ✅ supports both command and button
+    #target = update.message or update.callback_query.message # ✅ supports both command and button
 
     if not price_data:
-        await target.reply_text("❌ Failed to fetch BTC price. Please try again later.")
+        await handle_button_command_dif(update).reply_text("❌ Failed to fetch BTC price. Please try again later.")
         return
 
     message = format_price_message(price_data, user_id)
@@ -108,7 +108,7 @@ async def get_price_command_click(update: Update, context: CallbackContext):
                 ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await target.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
+    await handle_button_command_dif(update).reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 async def refresh_price_click(update: Update, context: CallbackContext) -> None:
@@ -156,9 +156,9 @@ async def set_currency_command_click(update: Update, context: CallbackContext) -
     # Initialize if not already
     user_currency_preferences.setdefault(user_id, [])
 
-    target = update.message or update.callback_query.message  # ✅ supports both command and button
+    #target = update.message or update.callback_query.message  # ✅ supports both command and button
 
-    await target.reply_text(
+    await handle_button_command_dif(update).reply_text(
         "💱 Select your preferred currencies (toggle below):",
         reply_markup=build_currency_keyboard(user_id)
     )
@@ -265,6 +265,19 @@ async def button_click_handler(update: Update, context: CallbackContext) -> None
         await handler(update, context)
     else:
         await query.edit_message_text("❓ Unknown action.")
+
+
+def handle_button_command_dif(update: Update):
+    """
+    Returns the appropriate message target from the Update object.
+
+    This handles both cases:
+    - update.message: when the user sends a regular command (e.g., /price)
+    - update.callback_query.message: when the user interacts via an inline button
+
+    Use this to reply or edit messages without needing to check which type of interaction triggered the update.
+    """
+    return update.message or update.callback_query.message
 
 
 # Function to start the bot
