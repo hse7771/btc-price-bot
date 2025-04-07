@@ -92,10 +92,11 @@ def format_price_message(price_data: dict, user_id: int) -> str:
 
 
 # Function-helper for price command and price button functions
-async def send_price_message(update: Update, context: CallbackContext):
+async def get_price_command_click(update: Update, context: CallbackContext):
     price_data = await get_btc_price()
     user_id = update.effective_user.id
-    target = update.message or update.callback_query.message
+
+    target = update.message or update.callback_query.message # ✅ supports both command and button
 
     if not price_data:
         await target.reply_text("❌ Failed to fetch BTC price. Please try again later.")
@@ -108,15 +109,6 @@ async def send_price_message(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await target.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
-
-
-# Function to handle /price command
-async def price_command(update: Update, context: CallbackContext) -> None:
-    await send_price_message(update, context)
-
-# Function to handle price button click
-async def price_button_click(update: Update, context: CallbackContext) -> None:
-    await send_price_message(update, context)
 
 
 async def refresh_price_click(update: Update, context: CallbackContext) -> None:
@@ -159,7 +151,7 @@ def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(buttons)
 
 # Handle /set_currency command
-async def set_currency(update: Update, context: CallbackContext) -> None:
+async def set_currency_command_click(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     # Initialize if not already
     user_currency_preferences.setdefault(user_id, [])
@@ -249,9 +241,9 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # Map callback_data to handlers
 BUTTON_HANDLERS = {
-    "get_price": price_button_click,
+    "get_price": get_price_command_click,
     "refresh_price": refresh_price_click,
-    "open_currency_menu": set_currency,
+    "open_currency_menu": set_currency_command_click,
     "toggle_USD": lambda u, c: toggle_currency(u, c, "USD"),
     "toggle_EUR": lambda u, c: toggle_currency(u, c, "EUR"),
     "toggle_RUB": lambda u, c: toggle_currency(u, c, "RUB"),
@@ -282,8 +274,8 @@ def main():
 
     # Register command handlers
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("price", price_command))
-    app.add_handler(CommandHandler("set_currency", set_currency))
+    app.add_handler(CommandHandler("price", get_price_command_click))
+    app.add_handler(CommandHandler("set_currency", set_currency_command_click))
     app.add_handler(CallbackQueryHandler(button_click_handler))
 
     # Start polling for messages
