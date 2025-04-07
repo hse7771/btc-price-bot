@@ -1,5 +1,4 @@
 import aiosqlite
-import os
 
 DB_NAME = "BTC_bot_data.db"
 

@@ -22,8 +22,6 @@ CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "CNY"]
 BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 
-user_currency_preferences: dict[int, list[str]] = {}
-
 
 async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict | None:
     """Helper function to fetch JSON data from an API asynchronously."""
@@ -77,9 +75,9 @@ async def get_btc_price() -> dict | None:
 
 
 # Function to format the price response message
-def format_price_message(price_data: dict, user_id: int) -> str:
+async def format_price_message(price_data: dict, user_id: int) -> str:
     """Formats the BTC price message with timestamp."""
-    preferred = user_currency_preferences.get(user_id)
+    preferred = await db.load_user_currencies(user_id)
     currencies = preferred or CURRENCIES
 
     message = "📊 *Current Bitcoin (BTC) Prices:*\n"
@@ -103,7 +101,7 @@ async def get_price_command_click(update: Update, context: CallbackContext):
         await handle_button_command_dif(update).reply_text("❌ Failed to fetch BTC price. Please try again later.")
         return
 
-    message = format_price_message(price_data, user_id)
+    message = await format_price_message(price_data, user_id)
     keyboard = [[InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")],
                 [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")]
                 ]
@@ -120,7 +118,7 @@ async def refresh_price_click(update: Update, context: CallbackContext) -> None:
         await update.callback_query.edit_message_text("❌ Failed to refresh BTC price.")
         return
 
-    message = format_price_message(price_data, user_id)
+    message = await format_price_message(price_data, user_id)
 
     keyboard = [
         [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")],
@@ -131,8 +129,8 @@ async def refresh_price_click(update: Update, context: CallbackContext) -> None:
     await update.callback_query.edit_message_text(message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
-def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
-    selected = set(user_currency_preferences.get(user_id, []))
+async def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    selected = set(await db.load_user_currencies(user_id) or [])
     buttons = []
 
     # Currency toggle buttons (in rows of 2)
@@ -154,38 +152,38 @@ def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
 # Handle /set_currency command
 async def set_currency_command_click(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
-    # Initialize if not already
-    user_currency_preferences.setdefault(user_id, [])
 
     #target = update.message or update.callback_query.message  # ✅ supports both command and button
 
     await handle_button_command_dif(update).reply_text(
         "💱 Select your preferred currencies (toggle below):",
-        reply_markup=build_currency_keyboard(user_id)
+        reply_markup=await build_currency_keyboard(user_id)
     )
 
 
 async def toggle_currency(update: Update, context: CallbackContext, currency: str) -> None:
     user_id = update.effective_user.id
-    prefs = user_currency_preferences.setdefault(user_id, [])
 
-    if currency in prefs:
-        prefs.remove(currency)
+    preferences = await db.load_user_currencies(user_id) or []
+
+    if currency in preferences:
+        preferences.remove(currency)
     else:
-        prefs.append(currency)
+        preferences.append(currency)
+    await db.save_user_currencies(user_id, preferences)
 
     await update.callback_query.answer()
-    await update.callback_query.edit_message_reply_markup(reply_markup=build_currency_keyboard(user_id))
+    await update.callback_query.edit_message_reply_markup(reply_markup=await build_currency_keyboard(user_id))
 
 
 async def confirm_currency_selection(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     user_id = update.effective_user.id
-    selected = user_currency_preferences.get(user_id, [])
+    selected = await db.load_user_currencies(user_id)
 
     # If no currencies selected — default to all
     if not selected:
-        user_currency_preferences[user_id] = CURRENCIES.copy()
+        await db.save_user_currencies(user_id, CURRENCIES.copy())
         msg = (
             "✅ *No currencies were selected.*\n"
             "All currencies have been selected by default.\n\n"
@@ -213,9 +211,9 @@ async def confirm_currency_selection(update: Update, context: CallbackContext) -
 
 async def clear_currency_selection(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
-    user_currency_preferences[user_id] = []
+    await db.clear_user_currencies(user_id)
     await update.callback_query.answer("🗑️ Cleared!")
-    await update.callback_query.edit_message_reply_markup(reply_markup=build_currency_keyboard(user_id))
+    await update.callback_query.edit_message_reply_markup(reply_markup=await build_currency_keyboard(user_id))
 
 
 async def help_command(update: Update, context: CallbackContext) -> None:
