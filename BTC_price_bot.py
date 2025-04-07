@@ -102,7 +102,9 @@ async def send_price_message(update: Update, context: CallbackContext):
         return
 
     message = format_price_message(price_data, user_id)
-    keyboard = [[InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]]
+    keyboard = [[InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")],
+                [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")]
+                ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await target.reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
@@ -128,7 +130,8 @@ async def refresh_price_click(update: Update, context: CallbackContext) -> None:
     message = format_price_message(price_data, user_id)
 
     keyboard = [
-        [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")]
+        [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")],
+        [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -161,7 +164,9 @@ async def set_currency(update: Update, context: CallbackContext) -> None:
     # Initialize if not already
     user_currency_preferences.setdefault(user_id, [])
 
-    await update.message.reply_text(
+    target = update.message or update.callback_query.message  # ✅ supports both command and button
+
+    await target.reply_text(
         "💱 Select your preferred currencies (toggle below):",
         reply_markup=build_currency_keyboard(user_id)
     )
@@ -203,7 +208,10 @@ async def confirm_currency_selection(update: Update, context: CallbackContext) -
     await query.answer()
 
     # Add a 📊 Check Price button
-    keyboard = [[InlineKeyboardButton("📊 Check Price", callback_data="get_price")]]
+    keyboard = [[
+        InlineKeyboardButton("📊 Check Price", callback_data="get_price"),
+        InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")
+    ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     # Replace the currency menu with confirmation + price button
@@ -231,6 +239,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
     keyboard = [
         [InlineKeyboardButton("📊 Price", callback_data="get_price")],
+        [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")],
         [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -242,6 +251,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 BUTTON_HANDLERS = {
     "get_price": price_button_click,
     "refresh_price": refresh_price_click,
+    "open_currency_menu": set_currency,
     "toggle_USD": lambda u, c: toggle_currency(u, c, "USD"),
     "toggle_EUR": lambda u, c: toggle_currency(u, c, "EUR"),
     "toggle_RUB": lambda u, c: toggle_currency(u, c, "RUB"),
