@@ -17,7 +17,7 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # List of currencies we will support
-CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "USDT"]
+CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "CNY"]
 BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 
@@ -249,7 +249,7 @@ BUTTON_HANDLERS = {
     "toggle_RUB": lambda u, c: toggle_currency(u, c, "RUB"),
     "toggle_GBP": lambda u, c: toggle_currency(u, c, "GBP"),
     "toggle_CAD": lambda u, c: toggle_currency(u, c, "CAD"),
-    "toggle_USDT": lambda u, c: toggle_currency(u, c, "USDT"),
+    "toggle_CNY": lambda u, c: toggle_currency(u, c, "CNY"),
     "close_menu": confirm_currency_selection,
     "currency_clear": clear_currency_selection,
 }
