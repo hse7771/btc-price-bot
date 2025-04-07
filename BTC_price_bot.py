@@ -217,6 +217,20 @@ async def clear_currency_selection(update: Update, context: CallbackContext) -> 
     await update.callback_query.edit_message_reply_markup(reply_markup=build_currency_keyboard(user_id))
 
 
+async def help_command(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text(
+        "ℹ️ *Bot Commands:*\n\n"
+        "/start – Start the bot and show main menu\n"
+        "/help – Show this help message\n"
+        "/price – Show the current Bitcoin price\n"
+        "/set_currency – Choose which currencies you want to see\n"
+        "/subscribe – Get regular BTC price updates\n"
+        "/reset – Reset all your preferences and subscriptions\n"
+        "/change_language – Change the language",
+        parse_mode="Markdown"
+    )
+
+
 # Handle /start command
 async def start(update: Update, context: CallbackContext) -> None:
     """Handles the /start command and sends a welcome message with buttons."""
@@ -287,6 +301,7 @@ def main():
 
     # Register command handlers
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("price", get_price_command_click))
     app.add_handler(CommandHandler("set_currency", set_currency_command_click))
     app.add_handler(CallbackQueryHandler(button_click_handler))
