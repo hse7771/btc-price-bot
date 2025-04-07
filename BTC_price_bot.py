@@ -2,6 +2,7 @@ import os
 import asyncio
 import aiohttp
 import logging
+import db
 from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -295,7 +296,9 @@ def handle_button_command_dif(update: Update):
 
 
 # Function to start the bot
-def main():
+async def main():
+    # init DB
+    await db.init_db()
     # Create application instance with the bot token
     app = Application.builder().token(TOKEN).build()
 
@@ -308,7 +311,12 @@ def main():
 
     # Start polling for messages
     print("🚀 Bot is running... Press Ctrl+C to stop.")
-    app.run_polling()
+    async with app:
+        await app.start()
+        await app.updater.start_polling()
+        # This keeps the loop alive forever
+        await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
+
