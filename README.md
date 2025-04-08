@@ -159,64 +159,61 @@ git commit --amend
 
 ---
 
-## 🧩 **Handling Mistaken Changes on the Wrong Branch**
+## 🛠️ **Fixing and Adjusting Mistakes in Git**
+
+A collection of useful workflows for handling common mistakes and cleanup in your Git history.
+
+### 🧩 Handling Mistaken Changes on the Wrong Branch
 
 Sometimes you might accidentally make changes on a feature branch that belong on the base branch (e.g., `develop`). For example, you updated `README.md` while working on a feature, but now want to commit that change to `develop` instead.
 
-### ✅ Goal
+#### ✅ Goal
 - Move only `README.md` changes to the base branch
 - Keep other in-progress changes on the current feature branch
 
-### 🛠 Steps
-
-1. **Stage only the file you want to move:**
+#### 🛠 Steps
 ```bash
+# 1. Stage only the file to move
 git add README.md
-```
 
-2. **Stash only the staged file:**
-```bash
+# 2. Stash only the staged part
 git stash push -m "Move README to develop" --staged
-```
 
-3. **Switch to the base branch (e.g., `develop`):**
-```bash
+# 3. Switch to base branch
 git checkout develop
-```
 
-4. **Apply the stashed change:**
-```bash
+# 4. Apply the stash
 git stash pop
-```
 
-5. **Commit the change in the correct branch:**
-```bash
+# 5. Commit on base branch
 git add README.md
 git commit -m "docs(readme): update commit and branching guide"
 git push origin develop
-```
 
-6. **Return to your feature branch to continue working:**
-```bash
+# 6. Return to feature branch
 git checkout feature/your-branch
 ```
 
-This avoids mixing responsibilities between branches and keeps your history clean and focused.
+For partial changes in the same file (e.g., `main.py`), use patch mode:
+```bash
+git add -p main.py
+```
+This allows you to select only the relevant changes.
 
 ---
 
-## 🚀 **Editing Past Commits**
-If you need to edit an earlier commit message:
+### ✍️ Editing Past Commits
 
-✅ **Last commit (not pushed yet):**
+#### ✅ Edit last commit (not pushed):
 ```bash
 git commit --amend
 ```
 
-✅ **Older commits:**
+#### ✅ Edit older commits:
 ```bash
-git rebase -i HEAD~N  # Replace N with the number of commits back you want to edit
+git rebase -i HEAD~N  # Replace N with number of commits back
 ```
+Then change `pick` to `reword`, save, and update messages.
 This command opens an interactive rebase menu where you can modify multiple previous commits. Each commit will be listed with the word `pick` next to it. To edit a commit message, change `pick` to `reword`, then save and close the editor. Git will then prompt you to edit the commit message for each `reword` entry.
 
 ### **Example Usage:**
@@ -239,6 +236,34 @@ pick 456789a chore: update dependencies
 After saving, Git will open the commit message editor for the first commit (`1234567`), allowing you to edit it.
 
 ⚠️ **If you've already pushed, use `git push --force` carefully!**
+
+---
+
+### 🔁 Renaming a Branch
+
+If you realize the branch name is incorrect or unclear:
+
+#### ✅ Rename current branch:
+```bash
+git branch -m new-branch-name
+```
+
+#### ✅ Rename another branch:
+```bash
+git branch -m old-name new-name
+```
+
+#### ✅ Push renamed branch to remote:
+```bash
+git push origin new-branch-name
+```
+
+#### ✅ Delete old branch from remote (optional):
+```bash
+git push origin --delete old-name
+```
+
+Use this if you've already pushed the old name and want to remove it.
 
 ---
 
