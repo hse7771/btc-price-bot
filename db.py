@@ -10,6 +10,14 @@ async def init_db():
                 currencies TEXT  -- Stored as comma-separated values
             )
         ''')
+
+        await db.execute('''
+                    CREATE TABLE IF NOT EXISTS base_subscribers (
+                        user_id INTEGER,
+                        interval_minutes INTEGER,
+                        PRIMARY KEY(user_id, interval_minutes)
+                    )
+                ''')
         await db.commit()
 
 
