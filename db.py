@@ -45,3 +45,29 @@ async def clear_user_currencies(user_id: int):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("DELETE FROM currency_preferences WHERE user_id = ?", (user_id,))
         await db.commit()
+
+
+async def add_base_subscription(user_id: int, interval: int):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(
+            "REPLACE INTO base_subscribers (user_id, interval_minutes) VALUES (?, ?)",
+            (user_id, interval)
+        )
+        await db.commit()
+
+async def remove_base_subscription(user_id: int, interval: int):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(
+            "DELETE FROM base_subscribers WHERE user_id = ? AND interval_minutes = ?",
+            (user_id, interval)
+        )
+        await db.commit()
+
+async def get_base_subscribers(interval: int) -> list[int]:
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute(
+            "SELECT user_id FROM base_subscribers WHERE interval_minutes = ?",
+            (interval,)
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [row[0] for row in rows]
