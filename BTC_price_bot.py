@@ -228,18 +228,31 @@ async def clear_currency_selection(update: Update, context: CallbackContext) -> 
 
 
 async def open_base_subscription_menu(update: Update, message_text: str, callback_prefix: str):
+    user_id = update.effective_user.id
     labels = {
         "base_": "⏰ Every {}",
         "unbase_": "❌ Cancel {} updates",
     }
     label_template = labels.get(callback_prefix, "⏰ Every {}")  # fallback for safety
+    intervals = PREDEFINED_INTERVALS
+
+    if callback_prefix.startswith("unbase_"):
+        user_subs = await db.get_user_subscriptions(user_id)  # list of intervals
+        if not user_subs:
+            await handle_button_command_dif(update).reply_text(
+                "🚫 You have no active subscriptions to cancel.",
+                reply_markup=build_main_action_keyboard()
+            )
+            return
+        else:
+            intervals = user_subs
+
     keyboard = [[InlineKeyboardButton(
         label_template.format(format_interval(i)),
         callback_data=f"{callback_prefix}{i}"
-    )] for i in PREDEFINED_INTERVALS]
+    )] for i in intervals]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     await handle_button_command_dif(update).reply_text(
         message_text,
         reply_markup=reply_markup

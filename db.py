@@ -71,3 +71,12 @@ async def get_base_subscribers(interval: int) -> list[int]:
         ) as cursor:
             rows = await cursor.fetchall()
             return [row[0] for row in rows]
+
+async def get_user_subscriptions(user_id: int) -> list[int]:
+    """Returns a list of intervals the user is subscribed to."""
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute(
+            "SELECT interval_minutes FROM base_subscribers WHERE user_id = ?", (user_id,)
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [row[0] for row in rows]
