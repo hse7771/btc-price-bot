@@ -230,12 +230,12 @@ async def clear_currency_selection(update: Update, context: CallbackContext) -> 
 
 async def open_base_subscription_menu(update: Update, message_text: str, callback_prefix: str):
     labels = {
-        "base_": "⏰ Every {} min",
-        "unbase_": "❌ Cancel {} min",
+        "base_": "⏰ Every {}",
+        "unbase_": "❌ Cancel {} updates",
     }
-    label_template = labels.get(callback_prefix, "⏰ Every {} min")  # fallback for safety
+    label_template = labels.get(callback_prefix, "⏰ Every {}")  # fallback for safety
     keyboard = [[InlineKeyboardButton(
-        label_template.format(i),
+        label_template.format(format_interval(i)),
         callback_data=f"{callback_prefix}{i}"
     )] for i in PREDEFINED_INTERVALS]
 
@@ -261,6 +261,18 @@ async def unsubscribe_base_command_click(update: Update, context: CallbackContex
         message_text="⚙️ Choose interval to unsubscribe:",
         callback_prefix="unbase_"
     )
+
+
+def format_interval(interval: int) -> str:
+    """Formats the interval for user-friendly display."""
+    if interval % 1440 == 0:  # Full days
+        days = interval // 1440
+        return f"{days} day{'s' if days > 1 else ''}"
+    elif interval % 60 == 0:  # Full hours
+        hours = interval // 60
+        return f"{hours} hour{'s' if hours > 1 else ''}"
+    else:
+        return f"{interval} minutes"
 
 
 async def help_command(update: Update, context: CallbackContext) -> None:
