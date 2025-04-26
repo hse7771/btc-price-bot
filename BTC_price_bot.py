@@ -258,6 +258,9 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
         label_template.format(format_interval(i)),
         callback_data=f"{callback_prefix}{i}"
     )] for i in intervals]
+    keyboard.append([
+        InlineKeyboardButton("⬅️ Back", callback_data="cancel_subscription_menu")
+    ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     await handle_button_command_dif(update, message_text, reply_markup=reply_markup)
@@ -313,6 +316,10 @@ async def confirm_unbase_sub(update, context, interval):
         parse_mode="Markdown",
         reply_markup=reply_markup
     )
+
+
+async def cancel_subscription_menu_click(update: Update, context: CallbackContext):
+    await get_price_command_click(update, context)
 
 
 def format_interval(interval: int) -> str:
@@ -375,6 +382,7 @@ def initialize_button_handlers():
         "currency_clear": clear_currency_selection,
         "subscribe_base": subscribe_base_command_click,
         "unsubscribe_base": unsubscribe_base_command_click,
+        "cancel_subscription_menu": cancel_subscription_menu_click,
     }
     # Dynamic handlers for currency toggles
     for currency in CURRENCIES:
