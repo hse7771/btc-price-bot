@@ -220,8 +220,13 @@ async def clear_currency_selection(update: Update, context: CallbackContext) -> 
 
 
 async def open_base_subscription_menu(update: Update, message_text: str, callback_prefix: str):
+    labels = {
+        "base_": "⏰ Every {} min",
+        "unbase_": "❌ Cancel {} min",
+    }
+    label_template = labels.get(callback_prefix, "⏰ Every {} min")  # fallback for safety
     keyboard = [[InlineKeyboardButton(
-        f"⏰ Every {i} min" if callback_prefix == "base_" else f"❌ Cancel {i} min",
+        label_template.format(i),
         callback_data=f"{callback_prefix}{i}"
     )] for i in PREDEFINED_INTERVALS]
 
