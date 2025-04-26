@@ -219,12 +219,26 @@ async def clear_currency_selection(update: Update, context: CallbackContext) -> 
     await update.callback_query.edit_message_reply_markup(reply_markup=await build_currency_keyboard(user_id))
 
 
-async def subscribe_base_command_click(update: Update, context: CallbackContext):
-    keyboard = [[InlineKeyboardButton(f"⏰ Every {i} min", callback_data=f"base_{i}")]
-                for i in PREDEFINED_INTERVALS]
+async def open_base_subscription_menu(update: Update, message_text: str, callback_prefix: str):
+    keyboard = [[InlineKeyboardButton(
+        f"⏰ Every {i} min" if callback_prefix == "base_" else f"❌ Cancel {i} min",
+        callback_data=f"{callback_prefix}{i}"
+    )] for i in PREDEFINED_INTERVALS]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await handle_button_command_dif(update).reply_text("📅 Choose how often you want BTC price updates:", reply_markup=reply_markup)
+    await handle_button_command_dif(update).reply_text(
+        message_text,
+        reply_markup=reply_markup
+    )
+
+
+async def subscribe_base_command_click(update: Update, context: CallbackContext):
+    await open_base_subscription_menu(
+        update,
+        message_text="📅 Choose how often you want BTC price updates:",
+        callback_prefix="base_"
+    )
 
 
 async def help_command(update: Update, context: CallbackContext) -> None:
