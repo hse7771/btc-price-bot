@@ -263,6 +263,19 @@ async def unsubscribe_base_command_click(update: Update, context: CallbackContex
     )
 
 
+async def confirm_base_sub(update, context, interval):
+    user_id = update.effective_user.id
+    await db.add_base_subscription(user_id, interval)
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(f"✅ Subscribed to updates every {format_interval(interval)}!")
+
+async def confirm_unbase_sub(update, context, interval):
+    user_id = update.effective_user.id
+    await db.remove_base_subscription(user_id, interval)
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(f"❌ Unsubscribed from {format_interval(interval)} updates.")
+
+
 def format_interval(interval: int) -> str:
     """Formats the interval for user-friendly display."""
     if interval % 1440 == 0:  # Full days
@@ -330,7 +343,10 @@ BUTTON_HANDLERS = {
     "subscribe_base": subscribe_base_command_click,
     "unsubscribe_base": unsubscribe_base_command_click,
 }
-
+# Dynamic handlers for base/unbase subscription per interval
+for interval in PREDEFINED_INTERVALS:
+    BUTTON_HANDLERS[f"base_{interval}"] = lambda u, c, i=interval: confirm_base_sub(u, c, i)
+    BUTTON_HANDLERS[f"unbase_{interval}"] = lambda u, c, i=interval: confirm_unbase_sub(u, c, i)
 
 async def button_click_handler(update: Update, context: CallbackContext) -> None:
     """Handles button press for 📊 Price."""
