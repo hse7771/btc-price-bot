@@ -233,21 +233,24 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
         "unbase_": "❌ Cancel {} updates",
     }
     label_template = labels.get(callback_prefix, "⏰ Every {}")  # fallback for safety
+
+    user_subs = await db.get_user_subscriptions(user_id)  # list of intervals
     intervals = PREDEFINED_INTERVALS
 
     if callback_prefix.startswith("unbase_"):
-        user_subs = await db.get_user_subscriptions(user_id)  # list of intervals
         if not user_subs:
-            await handle_button_command_dif(update,"🚫 You have no active subscriptions to cancel.",
+            await handle_button_command_dif(update,
+            "🚫 You have no active subscriptions to cancel.",
                 reply_markup=build_main_action_keyboard()
             )
             return
         intervals = user_subs
     elif callback_prefix.startswith("base_"):
-        user_subs = await db.get_user_subscriptions(user_id)
         if len(user_subs) >= len(PREDEFINED_INTERVALS):
-            await handle_button_command_dif(update, "✅ You are already subscribed to all available intervals!",
-                                            reply_markup=build_main_action_keyboard())
+            await handle_button_command_dif(update,
+            "✅ You are already subscribed to all available intervals!",
+                reply_markup=build_main_action_keyboard()
+            )
             return
         intervals = [i for i in PREDEFINED_INTERVALS if i not in user_subs]
 
