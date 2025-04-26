@@ -105,9 +105,14 @@ async def get_price_command_click(update: Update, context: CallbackContext):
         return
 
     message = await format_price_message(price_data, user_id)
-    keyboard = [[InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")],
-                [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")]
-                ]
+    keyboard = [[
+        InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price"),
+        InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")
+    ],
+    [
+        InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base"),
+        InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")
+    ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await handle_button_command_dif(update).reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
@@ -123,10 +128,14 @@ async def refresh_price_click(update: Update, context: CallbackContext) -> None:
 
     message = await format_price_message(price_data, user_id)
 
-    keyboard = [
-        [InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price")],
-        [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")]
-    ]
+    keyboard = [[
+        InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price"),
+        InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")
+    ],
+    [
+        InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base"),
+        InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")
+    ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.callback_query.edit_message_text(message, parse_mode="Markdown", reply_markup=reply_markup)
