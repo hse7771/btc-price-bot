@@ -332,17 +332,14 @@ BUTTON_HANDLERS = {
     "get_price": get_price_command_click,
     "refresh_price": refresh_price_click,
     "open_currency_menu": set_currency_command_click,
-    "toggle_USD": lambda u, c: toggle_currency(u, c, "USD"),
-    "toggle_EUR": lambda u, c: toggle_currency(u, c, "EUR"),
-    "toggle_RUB": lambda u, c: toggle_currency(u, c, "RUB"),
-    "toggle_GBP": lambda u, c: toggle_currency(u, c, "GBP"),
-    "toggle_CAD": lambda u, c: toggle_currency(u, c, "CAD"),
-    "toggle_CNY": lambda u, c: toggle_currency(u, c, "CNY"),
     "close_menu": confirm_currency_selection,
     "currency_clear": clear_currency_selection,
     "subscribe_base": subscribe_base_command_click,
     "unsubscribe_base": unsubscribe_base_command_click,
 }
+# Dynamic handlers for currency toggles
+for currency in CURRENCIES:
+    BUTTON_HANDLERS[f"toggle_{currency}"] = lambda u, c, curr=currency: toggle_currency(u, c, curr)
 # Dynamic handlers for base/unbase subscription per interval
 for interval in PREDEFINED_INTERVALS:
     BUTTON_HANDLERS[f"base_{interval}"] = lambda u, c, i=interval: confirm_base_sub(u, c, i)
