@@ -184,7 +184,6 @@ async def toggle_currency(update: Update, context: CallbackContext, currency: st
         preferences.append(currency)
     await db.save_user_currencies(user_id, preferences)
 
-    await update.callback_query.answer()
     await update.callback_query.edit_message_reply_markup(reply_markup=await build_currency_keyboard(user_id))
 
 
@@ -280,7 +279,6 @@ def build_main_action_keyboard() -> InlineKeyboardMarkup:
 async def confirm_base_sub(update, context, interval):
     user_id = update.effective_user.id
     await db.add_base_subscription(user_id, interval)
-    await update.callback_query.answer()
     reply_markup = build_main_action_keyboard()
 
     await update.callback_query.edit_message_text(
@@ -291,7 +289,6 @@ async def confirm_base_sub(update, context, interval):
 async def confirm_unbase_sub(update, context, interval):
     user_id = update.effective_user.id
     await db.remove_base_subscription(user_id, interval)
-    await update.callback_query.answer()
     reply_markup = build_main_action_keyboard()
 
     await update.callback_query.edit_message_text(
