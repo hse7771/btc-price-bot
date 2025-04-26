@@ -246,6 +246,14 @@ async def subscribe_base_command_click(update: Update, context: CallbackContext)
     )
 
 
+async def unsubscribe_base_command_click(update: Update, context: CallbackContext):
+    await open_base_subscription_menu(
+        update,
+        message_text="⚙️ Choose interval to unsubscribe:",
+        callback_prefix="unbase_"
+    )
+
+
 async def help_command(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
         "ℹ️ *Bot Commands:*\n\n"
@@ -276,7 +284,8 @@ async def start_command(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [InlineKeyboardButton("📊 Price", callback_data="get_price")],
         [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")],
-        [InlineKeyboardButton("🔔 Subscribe", callback_data="open_base_subscribe_menu")],
+        [InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base")],
+        [InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")],
         [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -297,7 +306,8 @@ BUTTON_HANDLERS = {
     "toggle_CNY": lambda u, c: toggle_currency(u, c, "CNY"),
     "close_menu": confirm_currency_selection,
     "currency_clear": clear_currency_selection,
-    "open_base_subscribe_menu": subscribe_base_command_click,
+    "subscribe_base": subscribe_base_command_click,
+    "unsubscribe_base": unsubscribe_base_command_click,
 }
 
 
@@ -339,6 +349,7 @@ async def main():
     app.add_handler(CommandHandler("price", get_price_command_click))
     app.add_handler(CommandHandler("set_currency", set_currency_command_click))
     app.add_handler(CommandHandler("subscribe", subscribe_base_command_click))
+    app.add_handler(CommandHandler("unsubscribe", unsubscribe_base_command_click))
     app.add_handler(CallbackQueryHandler(button_click_handler))
 
     # Start polling for messages
