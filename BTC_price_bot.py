@@ -263,17 +263,42 @@ async def unsubscribe_base_command_click(update: Update, context: CallbackContex
     )
 
 
+def build_main_action_keyboard() -> InlineKeyboardMarkup:
+    keyboard = [
+        [
+            InlineKeyboardButton("📊 Check Price", callback_data="get_price"),
+            InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")
+        ],
+        [
+            InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base"),
+            InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
 async def confirm_base_sub(update, context, interval):
     user_id = update.effective_user.id
     await db.add_base_subscription(user_id, interval)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(f"✅ Subscribed to updates every {format_interval(interval)}!")
+    reply_markup = build_main_action_keyboard()
+
+    await update.callback_query.edit_message_text(
+        f"✅ Subscribed to updates every {format_interval(interval)}!",
+        parse_mode="Markdown",
+        reply_markup=reply_markup)
 
 async def confirm_unbase_sub(update, context, interval):
     user_id = update.effective_user.id
     await db.remove_base_subscription(user_id, interval)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(f"❌ Unsubscribed from {format_interval(interval)} updates.")
+    reply_markup = build_main_action_keyboard()
+
+    await update.callback_query.edit_message_text(
+        f"❌ Unsubscribed from {format_interval(interval)} updates.",
+        parse_mode="Markdown",
+        reply_markup=reply_markup
+    )
 
 
 def format_interval(interval: int) -> str:
