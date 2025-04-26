@@ -242,8 +242,14 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
                 reply_markup=build_main_action_keyboard()
             )
             return
-        else:
-            intervals = user_subs
+        intervals = user_subs
+    elif callback_prefix.startswith("base_"):
+        user_subs = await db.get_user_subscriptions(user_id)
+        if len(user_subs) >= len(PREDEFINED_INTERVALS):
+            await handle_button_command_dif(update, "✅ You are already subscribed to all available intervals!",
+                                            reply_markup=build_main_action_keyboard())
+            return
+        intervals = [i for i in PREDEFINED_INTERVALS if i not in user_subs]
 
     keyboard = [[InlineKeyboardButton(
         label_template.format(format_interval(i)),
