@@ -101,7 +101,7 @@ async def get_price_command_click(update: Update, context: CallbackContext):
     #target = update.message or update.callback_query.message # ✅ supports both command and button
 
     if not price_data:
-        await handle_button_command_dif(update).reply_text("❌ Failed to fetch BTC price. Please try again later.")
+        await handle_button_command_dif(update,"❌ Failed to fetch BTC price. Please try again later.")
         return
 
     message = await format_price_message(price_data, user_id)
@@ -115,7 +115,7 @@ async def get_price_command_click(update: Update, context: CallbackContext):
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await handle_button_command_dif(update).reply_text(message, parse_mode="Markdown", reply_markup=reply_markup)
+    await handle_button_command_dif(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 async def refresh_price_click(update: Update, context: CallbackContext) -> None:
@@ -167,8 +167,7 @@ async def set_currency_command_click(update: Update, context: CallbackContext) -
 
     #target = update.message or update.callback_query.message  # ✅ supports both command and button
 
-    await handle_button_command_dif(update).reply_text(
-        "💱 Select your preferred currencies (toggle below):",
+    await handle_button_command_dif(update,"💱 Select your preferred currencies (toggle below):",
         reply_markup=await build_currency_keyboard(user_id)
     )
 
@@ -239,8 +238,7 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
     if callback_prefix.startswith("unbase_"):
         user_subs = await db.get_user_subscriptions(user_id)  # list of intervals
         if not user_subs:
-            await handle_button_command_dif(update).reply_text(
-                "🚫 You have no active subscriptions to cancel.",
+            await handle_button_command_dif(update,"🚫 You have no active subscriptions to cancel.",
                 reply_markup=build_main_action_keyboard()
             )
             return
@@ -253,10 +251,7 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
     )] for i in intervals]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await handle_button_command_dif(update).reply_text(
-        message_text,
-        reply_markup=reply_markup
-    )
+    await handle_button_command_dif(update, message_text, reply_markup=reply_markup)
 
 
 async def subscribe_base_command_click(update: Update, context: CallbackContext):
@@ -396,17 +391,17 @@ async def button_click_handler(update: Update, context: CallbackContext) -> None
         await query.edit_message_text("❓ Unknown action.")
 
 
-def handle_button_command_dif(update: Update):
+async def handle_button_command_dif(update: Update, msg: str, reply_markup: InlineKeyboardMarkup = None, parse_mode: str = None):
     """
-    Returns the appropriate message target from the Update object.
+    Handles sending or editing a message depending on whether it was triggered by a button click or a command.
 
-    This handles both cases:
-    - update.message: when the user sends a regular command (e.g., /price)
-    - update.callback_query.message: when the user interacts via an inline button
-
-    Use this to reply or edit messages without needing to check which type of interaction triggered the update.
+    - If it was a button click: edits the existing message.
+    - If it was a command: sends a new message.
     """
-    return update.message or update.callback_query.message
+    if update.callback_query:
+        await update.callback_query.edit_message_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
+    else:
+        await update.message.reply_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
 
 
 # Function to start the bot
