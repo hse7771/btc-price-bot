@@ -21,6 +21,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=lo
 CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "CNY"]
 BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
+PREDEFINED_INTERVALS = [10, 30, 60, 240, 1440]  # In minutes
 
 
 async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict | None:
@@ -218,6 +219,14 @@ async def clear_currency_selection(update: Update, context: CallbackContext) -> 
     await update.callback_query.edit_message_reply_markup(reply_markup=await build_currency_keyboard(user_id))
 
 
+async def subscribe_base_command_click(update: Update, context: CallbackContext):
+    keyboard = [[InlineKeyboardButton(f"⏰ Every {i} min", callback_data=f"base_{i}")]
+                for i in PREDEFINED_INTERVALS]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await handle_button_command_dif(update).reply_text("📅 Choose how often you want BTC price updates:", reply_markup=reply_markup)
+
+
 async def help_command(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
         "ℹ️ *Bot Commands:*\n\n"
@@ -248,7 +257,8 @@ async def start_command(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [InlineKeyboardButton("📊 Price", callback_data="get_price")],
         [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")],
-        [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")]
+        [InlineKeyboardButton("🔔 Subscribe", callback_data="open_base_subscribe_menu")],
+        [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -268,6 +278,7 @@ BUTTON_HANDLERS = {
     "toggle_CNY": lambda u, c: toggle_currency(u, c, "CNY"),
     "close_menu": confirm_currency_selection,
     "currency_clear": clear_currency_selection,
+    "open_base_subscribe_menu": subscribe_base_command_click,
 }
 
 
@@ -308,6 +319,7 @@ async def main():
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("price", get_price_command_click))
     app.add_handler(CommandHandler("set_currency", set_currency_command_click))
+    app.add_handler(CommandHandler("subscribe", subscribe_base_command_click))
     app.add_handler(CallbackQueryHandler(button_click_handler))
 
     # Start polling for messages
