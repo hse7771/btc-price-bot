@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 import logging
 import db
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler
@@ -334,6 +334,51 @@ def format_interval(interval: int) -> str:
         return f"{interval} minutes"
 
 
+def is_time_to_send(interval_minutes: int) -> bool:
+    now = datetime.utcnow()
+    return (now.minute % interval_minutes) == 0
+
+
+async def base_plan_scheduler(app: Application):
+    """Background task that checks base plan subscribers and sends updates."""
+
+    while True:
+        now = datetime.utcnow()
+        next_minute = now.replace(second=0, microsecond=0) + timedelta(minutes=1)
+        sleep_seconds = (next_minute - now).total_seconds()
+        await asyncio.sleep(sleep_seconds)  # Sleep until the next minute
+
+        users_to_notify = set()
+
+        for interval in PREDEFINED_INTERVALS:
+            if is_time_to_send(interval):
+                users = await db.get_base_subscribers(interval)
+                users_to_notify.update(users)  # set() automatically removes duplicates
+
+        if users_to_notify:
+            logging.info(f"📤 Sending BTC update to {len(users_to_notify)} users.")
+
+            price_data = await get_btc_price()
+            if price_data:
+                tasks = []
+                for user_id in users_to_notify:
+                    message = await format_price_message(price_data, user_id)
+                    tasks.append(
+                        app.bot.send_message(
+                            chat_id=user_id,
+                            text=f"📢 *BTC Update* 📢\n\n{message}",
+                            parse_mode="Markdown"
+                        )
+                    )
+                # Run all send tasks in parallel, safely
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for i, result in enumerate(results):
+                    if isinstance(result, Exception):
+                        logging.error(
+                            f"❌ Failed to send message to user {user_id} | {type(result).__name__}: {result}"
+                        )
+
+
 async def help_command(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
         "ℹ️ *Bot Commands:*\n\n"
@@ -442,6 +487,8 @@ async def main():
     async with app:
         await app.start()
         await app.updater.start_polling()
+
+        asyncio.create_task(base_plan_scheduler(app))
         # This keeps the loop alive forever
         await asyncio.Event().wait()
 
