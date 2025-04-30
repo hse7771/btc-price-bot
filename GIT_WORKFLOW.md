@@ -202,6 +202,43 @@ This allows you to select only the relevant changes.
 
 ---
 
+
+### 🔀 Moving Last N Commits to a Different Branch
+
+Sometimes you make commits on the wrong branch by accident. This guide explains how to move the last N commits from your current branch to another one (e.g., `develop`) and remove them from the current branch cleanly.
+
+#### ✅ Steps to Move the Last 2 Commits to Another Branch
+
+1. **Check the last two commits:**
+   ```bash
+   git log --oneline -n 2
+   ```
+   Copy the commit hashes of the last two commits (e.g., `abc1234`, `def5678`).
+
+2. **Switch to the target branch (e.g., `develop`):**
+   ```bash
+   git checkout develop
+   ```
+
+3. **Cherry-pick the commits onto the target branch:**
+   ```bash
+   git cherry-pick abc1234 def5678
+   ```
+
+4. **Return to your original branch:**
+   ```bash
+   git checkout feature/your-branch
+   ```
+
+5. **Remove the last 2 commits from the current branch:**
+   ```bash
+   git reset --hard HEAD~2
+   ```
+
+✅ The commits are now part of the correct branch and removed from the original one.
+
+---
+
 ### ✍️ Editing Past Commits
 
 #### ✅ Edit last commit (not pushed):
