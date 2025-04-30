@@ -31,7 +31,9 @@ async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict | None:
             return await response.json()
     except aiohttp.ClientError as e:
         logging.error(f"API request failed: {url} | Error: {e}")
-        return None
+    except Exception as e:
+        logging.exception(f"Unexpected error in fetch_json({url}): {e}")
+    return None
 
 
 async def get_price_blockchain(session: aiohttp.ClientSession) -> dict | None:
