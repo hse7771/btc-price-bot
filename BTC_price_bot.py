@@ -223,7 +223,8 @@ async def help_command(update: Update, context: CallbackContext) -> None:
         "/help – Show this help message\n"
         "/price – Show the current Bitcoin price\n"
         "/set_currency – Choose which currencies you want to see\n"
-        "/subscribe – Get regular BTC price updates\n"
+        "/subscribe – Subscribe to regular BTC updates (e.g. every 15, 30, 60 min)\n"
+        "/unsubscribe – Cancel your base update subscriptions\n"
         "/reset – Reset all your preferences and subscriptions\n"
         "/change_language – Change the language",
         parse_mode="Markdown"
@@ -236,10 +237,10 @@ async def start_command(update: Update, context: CallbackContext) -> None:
     welcome_message = (
         "👋 *Hello! Welcome to the Bitcoin Price Bot.*\n\n"
         "Here’s what I can do for you:\n"
-        "🔹 Fetch live Bitcoin prices\n"
-        "🔹 Support multiple currencies\n"
-        "🔹 Support currency filter\n\n"
-        "👇 Choose an option:"
+        "🔹 Show real-time BTC prices\n"
+        "🔹 Let you choose preferred currencies\n"
+        "🔹 Send regular price updates\n\n"
+        "👇 Use the buttons below to get started:"
     )
 
     keyboard = [
