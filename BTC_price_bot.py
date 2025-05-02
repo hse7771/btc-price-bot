@@ -23,6 +23,15 @@ BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 PREDEFINED_INTERVALS = [10, 30, 60, 240, 1440]  # In minutes
 
+HTTP_SESSION: aiohttp.ClientSession | None = None
+
+async def get_http_session() -> aiohttp.ClientSession:
+    """Return a singleton aiohttp session, creating it on first use."""
+    global HTTP_SESSION
+    if HTTP_SESSION is None or HTTP_SESSION.closed:
+        HTTP_SESSION = aiohttp.ClientSession()
+    return HTTP_SESSION
+
 
 async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict | None:
     """Helper function to fetch JSON data from an API asynchronously."""
@@ -58,8 +67,10 @@ async def get_price_coingecko(session: aiohttp.ClientSession) -> dict | None:
 
 
 async def get_btc_price() -> dict | None:
-    """Get BTC price from CoinGecko or Blockchain with failover. Fetch exchange rates in parallel."""
-    async with aiohttp.ClientSession() as session:
+    """Return cached BTC price if fresh, otherwise refetch"""
+    session = await get_http_session()
+
+    async with session:
         # Start fetching all data in parallel
         coingecko_task = asyncio.create_task(get_price_coingecko(session))
         blockchain_task = asyncio.create_task(get_price_blockchain(session))
@@ -490,8 +501,12 @@ async def main():
         await app.updater.start_polling()
 
         asyncio.create_task(base_plan_scheduler(app))
-        # This keeps the loop alive forever
-        await asyncio.Event().wait()
+        try:
+            # This keeps the loop alive forever
+            await asyncio.Event().wait()
+        finally:
+            if HTTP_SESSION and not HTTP_SESSION.closed:
+                await HTTP_SESSION.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
