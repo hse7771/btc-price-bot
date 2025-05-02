@@ -3,10 +3,12 @@ import asyncio
 import aiohttp
 import logging
 import db
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler
+from typing import Any
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,6 +24,14 @@ CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "CNY"]
 BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 PREDEFINED_INTERVALS = [10, 30, 60, 240, 1440]  # In minutes
+FETCH_INTERVAL = 60   # seconds
+
+@dataclass(slots=True)
+class PriceCache:
+    data: dict[str, Any]
+    ts: datetime
+
+PRICE_CACHE: PriceCache | None = None
 
 HTTP_SESSION: aiohttp.ClientSession | None = None
 
@@ -69,23 +79,36 @@ async def get_price_coingecko(session: aiohttp.ClientSession) -> dict | None:
 async def get_btc_price() -> dict | None:
     """Return cached BTC price if fresh, otherwise refetch"""
     session = await get_http_session()
+    return await _fetch_and_cache(session)
 
-    async with session:
-        # Start fetching all data in parallel
-        coingecko_task = asyncio.create_task(get_price_coingecko(session))
-        blockchain_task = asyncio.create_task(get_price_blockchain(session))
 
-        # Wait for CoinGecko result first
-        coingecko_price = await coingecko_task
-        if coingecko_price:
-            return coingecko_price  # Return if CoinGecko succeeded
+async def _fetch_and_cache(session: aiohttp.ClientSession) -> dict | None:
+    global PRICE_CACHE
+    # use existing cache if still fresh
+    if PRICE_CACHE and (datetime.utcnow() - PRICE_CACHE.ts).total_seconds() < FETCH_INTERVAL:
+        return PRICE_CACHE.data
 
-        # If CoinGecko failed, wait for Blockchain price
-        blockchain_price = await blockchain_task
-        if blockchain_price:
-            return blockchain_price
+    # --- actual remote fetch (unchanged logic) ---
+    coingecko_task = asyncio.create_task(get_price_coingecko(session))
+    blockchain_task = asyncio.create_task(get_price_blockchain(session))
 
-    return None  # If both APIs fail, return None
+    coingecko_data, blockchain_data = await asyncio.gather(coingecko_task, blockchain_task, return_exceptions=True)
+    data = None
+    if coingecko_data and not isinstance(coingecko_data, Exception):
+        data = coingecko_data
+    elif blockchain_data and not isinstance(blockchain_data, Exception):
+        data = blockchain_data
+
+    if data:
+        PRICE_CACHE = PriceCache(data, datetime.utcnow())
+    return data
+
+
+async def price_cache_refresher(interval_sec: int = FETCH_INTERVAL):
+    session = await get_http_session()
+    while True:
+        await _fetch_and_cache(session)
+        await asyncio.sleep(interval_sec)
 
 
 # Function to format the price response message
@@ -501,6 +524,7 @@ async def main():
         await app.updater.start_polling()
 
         asyncio.create_task(base_plan_scheduler(app))
+        asyncio.create_task(price_cache_refresher())
         try:
             # This keeps the loop alive forever
             await asyncio.Event().wait()
