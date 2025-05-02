@@ -139,15 +139,7 @@ async def get_price_command_click(update: Update, context: CallbackContext):
         return
 
     message = await format_price_message(price_data, user_id)
-    keyboard = [[
-        InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price"),
-        InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")
-    ],
-    [
-        InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base"),
-        InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")
-    ]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = build_main_action_keyboard("🔄 Refresh Price", "refresh_price")
 
     await handle_button_command_dif(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
@@ -161,16 +153,7 @@ async def refresh_price_click(update: Update, context: CallbackContext) -> None:
         return
 
     message = await format_price_message(price_data, user_id)
-
-    keyboard = [[
-        InlineKeyboardButton("🔄 Refresh Price", callback_data="refresh_price"),
-        InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")
-    ],
-    [
-        InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base"),
-        InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")
-    ]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = build_main_action_keyboard("🔄 Refresh Price", "refresh_price")
 
     await update.callback_query.edit_message_text(message, parse_mode="Markdown", reply_markup=reply_markup)
 
@@ -316,10 +299,10 @@ async def unsubscribe_base_command_click(update: Update, context: CallbackContex
     )
 
 
-def build_main_action_keyboard() -> InlineKeyboardMarkup:
+def build_main_action_keyboard(label_first_button: str = "📊 Check Price", callback_first_button: str = "get_price") -> InlineKeyboardMarkup:
     keyboard = [
         [
-            InlineKeyboardButton("📊 Check Price", callback_data="get_price"),
+            InlineKeyboardButton(label_first_button, callback_data=callback_first_button),
             InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")
         ],
         [
