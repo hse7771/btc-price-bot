@@ -360,9 +360,10 @@ async def base_plan_scheduler(app: Application):
 
             price_data = await get_btc_price()
             if price_data:
-                tasks = []
+                tasks, user_ids = [], []
                 for user_id in users_to_notify:
                     message = await format_price_message(price_data, user_id)
+                    user_ids.append(user_id)
                     tasks.append(
                         app.bot.send_message(
                             chat_id=user_id,
@@ -372,10 +373,10 @@ async def base_plan_scheduler(app: Application):
                     )
                 # Run all send tasks in parallel, safely
                 results = await asyncio.gather(*tasks, return_exceptions=True)
-                for i, result in enumerate(results):
+                for uid, result in zip(user_ids, results):
                     if isinstance(result, Exception):
                         logging.error(
-                            f"❌ Failed to send message to user {user_id} | {type(result).__name__}: {result}"
+                            f"❌ Failed to send message to user {uid} | {type(result).__name__}: {result}"
                         )
 
 
