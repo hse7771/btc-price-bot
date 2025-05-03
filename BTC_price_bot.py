@@ -127,15 +127,15 @@ async def format_price_message(price_data: dict, user_id: int) -> str:
     return message
 
 
-# Function-helper for price command and price button functions
-async def get_price_command_click(update: Update, context: CallbackContext):
+async def _show_price(update: Update, context: CallbackContext) -> None:
+    """Fetch BTC price once and display it (new msg or edit-in-place)."""
     price_data = await get_btc_price()
     user_id = update.effective_user.id
 
-    #target = update.message or update.callback_query.message # ✅ supports both command and button
+    # target = update.message or update.callback_query.message # ✅ supports both command and button
 
     if not price_data:
-        await handle_button_command_dif(update,"❌ Failed to fetch BTC price. Please try again later.")
+        await handle_button_command_dif(update, "❌ Failed to fetch BTC price. Please try again later.")
         return
 
     message = await format_price_message(price_data, user_id)
@@ -144,18 +144,15 @@ async def get_price_command_click(update: Update, context: CallbackContext):
     await handle_button_command_dif(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
+# Function-helper for price command and price button functions
+async def get_price_command_click(update: Update, context: CallbackContext):
+    """Handles /price command or main “📊 Check Price” button."""
+    await _show_price(update, context)
+
+
 async def refresh_price_click(update: Update, context: CallbackContext) -> None:
-    user_id = update.effective_user.id
-    price_data = await get_btc_price()
-
-    if not price_data:
-        await update.callback_query.edit_message_text("❌ Failed to refresh BTC price.")
-        return
-
-    message = await format_price_message(price_data, user_id)
-    reply_markup = build_main_action_keyboard("🔄 Refresh Price", "refresh_price")
-
-    await update.callback_query.edit_message_text(message, parse_mode="Markdown", reply_markup=reply_markup)
+    """Handles “🔄 Refresh Price” inline button."""
+    await _show_price(update, context)
 
 
 async def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
