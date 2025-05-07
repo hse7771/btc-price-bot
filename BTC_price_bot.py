@@ -135,13 +135,13 @@ async def _show_price(update: Update, context: CallbackContext) -> None:
     # target = update.message or update.callback_query.message # ✅ supports both command and button
 
     if not price_data:
-        await handle_button_command_dif(update, "❌ Failed to fetch BTC price. Please try again later.")
+        await send_or_edit(update, "❌ Failed to fetch BTC price. Please try again later.")
         return
 
     message = await format_price_message(price_data, user_id)
     reply_markup = build_main_action_keyboard("🔄 Refresh Price", "refresh_price")
 
-    await handle_button_command_dif(update, message, parse_mode="Markdown", reply_markup=reply_markup)
+    await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 # Function-helper for price command and price button functions
@@ -181,7 +181,7 @@ async def set_currency_command_click(update: Update, context: CallbackContext) -
 
     #target = update.message or update.callback_query.message  # ✅ supports both command and button
 
-    await handle_button_command_dif(update,"💱 Select your preferred currencies (toggle below):",
+    await send_or_edit(update,"💱 Select your preferred currencies (toggle below):",
         reply_markup=await build_currency_keyboard(user_id)
     )
 
@@ -197,11 +197,10 @@ async def toggle_currency(update: Update, context: CallbackContext, currency: st
         preferences.append(currency)
     await db.save_user_currencies(user_id, preferences)
 
-    await update.callback_query.edit_message_reply_markup(reply_markup=await build_currency_keyboard(user_id))
+    await send_or_edit(update, reply_markup=await build_currency_keyboard(user_id))
 
 
 async def confirm_currency_selection(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
     user_id = update.effective_user.id
     selected = await db.load_user_currencies(user_id)
 
@@ -220,8 +219,6 @@ async def confirm_currency_selection(update: Update, context: CallbackContext) -
             "You can now check live BTC prices using these currencies."
         )
 
-    await query.answer()
-
     # Add a 📊 Check Price button
     keyboard = [[
         InlineKeyboardButton("📊 Check Price", callback_data="get_price"),
@@ -230,14 +227,13 @@ async def confirm_currency_selection(update: Update, context: CallbackContext) -
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     # Replace the currency menu with confirmation + price button
-    await query.edit_message_text(msg, parse_mode="Markdown", reply_markup=reply_markup)
+    await send_or_edit(update, msg, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 async def clear_currency_selection(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     await db.clear_user_currencies(user_id)
-    await update.callback_query.answer("🗑️ Cleared!")
-    await update.callback_query.edit_message_reply_markup(reply_markup=await build_currency_keyboard(user_id))
+    await send_or_edit(update, reply_markup=await build_currency_keyboard(user_id))
 
 
 async def open_base_subscription_menu(update: Update, message_text: str, callback_prefix: str):
@@ -253,7 +249,7 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
 
     if callback_prefix.startswith("unbase_"):
         if not user_subs:
-            await handle_button_command_dif(update,
+            await send_or_edit(update,
             "🚫 You have no active subscriptions to cancel.",
                 reply_markup=build_main_action_keyboard()
             )
@@ -261,7 +257,7 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
         intervals = user_subs
     elif callback_prefix.startswith("base_"):
         if len(user_subs) >= len(PREDEFINED_INTERVALS):
-            await handle_button_command_dif(update,
+            await send_or_edit(update,
             "✅ You are already subscribed to all available intervals!",
                 reply_markup=build_main_action_keyboard()
             )
@@ -277,7 +273,7 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
     ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await handle_button_command_dif(update, message_text, reply_markup=reply_markup)
+    await send_or_edit(update, message_text, reply_markup=reply_markup)
 
 
 async def subscribe_base_command_click(update: Update, context: CallbackContext):
@@ -315,8 +311,8 @@ async def confirm_base_sub(update, context, interval):
     await db.add_base_subscription(user_id, interval)
     reply_markup = build_main_action_keyboard()
 
-    await update.callback_query.edit_message_text(
-        f"✅ Subscribed to updates every {format_interval(interval)}!",
+    await send_or_edit(update,
+    f"✅ Subscribed to updates every {format_interval(interval)}!",
         parse_mode="Markdown",
         reply_markup=reply_markup)
 
@@ -325,10 +321,10 @@ async def confirm_unbase_sub(update, context, interval):
     await db.remove_base_subscription(user_id, interval)
     reply_markup = build_main_action_keyboard()
 
-    await update.callback_query.edit_message_text(
-        f"❌ Unsubscribed from {format_interval(interval)} updates.",
-        parse_mode="Markdown",
-        reply_markup=reply_markup
+    await send_or_edit(update,
+    f"❌ Unsubscribed from {format_interval(interval)} updates.",
+    parse_mode="Markdown",
+    reply_markup=reply_markup
     )
 
 
@@ -395,7 +391,7 @@ async def base_plan_scheduler(app: Application):
 
 
 async def help_command(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text(
+    await send_or_edit(update,
         "ℹ️ *Bot Commands:*\n\n"
         "/start – Start the bot and show main menu\n"
         "/help – Show this help message\n"
@@ -429,8 +425,8 @@ async def start_command(update: Update, context: CallbackContext) -> None:
         [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
+    await send_or_edit(update, welcome_message, parse_mode="Markdown", reply_markup=reply_markup)
 
-    await update.message.reply_text(welcome_message, parse_mode="Markdown", reply_markup=reply_markup)
 
 def initialize_button_handlers():
     # Map callback_data to handlers
@@ -468,15 +464,18 @@ async def button_click_handler(update: Update, context: CallbackContext) -> None
         await query.edit_message_text("❓ Unknown action.")
 
 
-async def handle_button_command_dif(update: Update, msg: str, reply_markup: InlineKeyboardMarkup = None, parse_mode: str = None):
+async def send_or_edit(update: Update, msg: str | None = None, reply_markup: InlineKeyboardMarkup = None, parse_mode: str = None):
     """
     Handles sending or editing a message depending on whether it was triggered by a button click or a command.
-
-    - If it was a button click: edits the existing message.
-    - If it was a command: sends a new message.
     """
     if update.callback_query:
-        await update.callback_query.edit_message_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
+        # message editing
+        if msg:
+            await update.callback_query.edit_message_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
+        # keyboard editing
+        else:
+            await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
+    # new message sending
     else:
         await update.message.reply_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
 
