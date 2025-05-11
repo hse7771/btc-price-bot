@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, AIORateLimiter, CommandHandler, CallbackContext, CallbackQueryHandler, ContextTypes
 from typing import Any
 
 # Load environment variables from .env file
@@ -494,7 +494,15 @@ async def main():
     # init DB
     await db.init_db()
     # Create application instance with the bot token
-    app = Application.builder().token(TOKEN).build()
+    app = (
+        Application.builder()
+        .token(TOKEN)
+        .rate_limiter(AIORateLimiter(
+            overall_max_rate=30,
+            max_retries=3
+        ))
+        .build()
+    )
 
     # Register command handlers
     app.add_handler(CommandHandler("start", start_command))
