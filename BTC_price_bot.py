@@ -25,6 +25,7 @@ BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 PREDEFINED_INTERVALS = [10, 30, 60, 240, 1440]  # In minutes
 FETCH_INTERVAL = 60   # seconds
+CACHE_LOCK = asyncio.Lock()
 
 @dataclass(slots=True)
 class PriceCache:
@@ -83,32 +84,45 @@ async def get_btc_price() -> dict | None:
 
 
 async def _fetch_and_cache(session: aiohttp.ClientSession) -> dict | None:
+    """
+    Return cached price if it is still fresh; otherwise fetch a new one and
+    update the global cache.  A lock guarantees that only ONE coroutine performs
+    the slow network fetch, even under heavy concurrent load.
+    """
     global PRICE_CACHE
-    # use existing cache if still fresh
+    # FAST PATH – no locking if data is already fresh
     if PRICE_CACHE and (datetime.utcnow() - PRICE_CACHE.ts).total_seconds() < FETCH_INTERVAL:
         return PRICE_CACHE.data
 
-    # --- actual remote fetch (unchanged logic) ---
-    coingecko_task = asyncio.create_task(get_price_coingecko(session))
-    blockchain_task = asyncio.create_task(get_price_blockchain(session))
+        # SLOW PATH – may need to refresh; take the lock
+    async with CACHE_LOCK:  # suspend until lock is free
+        #      re-check staleness because another coroutine might have refreshed
+        #      while we were waiting.
+        if PRICE_CACHE and (datetime.utcnow() - PRICE_CACHE.ts).total_seconds() < FETCH_INTERVAL:
+            return PRICE_CACHE.data
 
-    coingecko_data, blockchain_data = await asyncio.gather(coingecko_task, blockchain_task, return_exceptions=True)
-    data = None
-    if coingecko_data and not isinstance(coingecko_data, Exception):
-        data = coingecko_data
-    elif blockchain_data and not isinstance(blockchain_data, Exception):
-        data = blockchain_data
+        coingecko_task = asyncio.create_task(get_price_coingecko(session))
+        blockchain_task = asyncio.create_task(get_price_blockchain(session))
+        coingecko_data, blockchain_data = await asyncio.gather(
+            coingecko_task, blockchain_task, return_exceptions=True
+        )
 
-    if data:
-        PRICE_CACHE = PriceCache(data, datetime.utcnow())
-    return data
+        data = None
+        if coingecko_data and not isinstance(coingecko_data, Exception):
+            data = coingecko_data
+        elif blockchain_data and not isinstance(blockchain_data, Exception):
+            data = blockchain_data
+
+        if data:
+            PRICE_CACHE = PriceCache(data, datetime.utcnow())
+
+        # leaving the `async with` block automatically releases the lock.
+        return data
 
 
-async def price_cache_refresher(interval_sec: int = FETCH_INTERVAL):
+async def refresh_price_cache(context: CallbackContext) -> None:
     session = await get_http_session()
-    while True:
-        await _fetch_and_cache(session)
-        await asyncio.sleep(interval_sec)
+    await _fetch_and_cache(session)
 
 
 # Function to format the price response message
@@ -497,9 +511,10 @@ async def main():
         await app.start()
         await app.updater.start_polling()
 
-        delay = (60 - datetime.utcnow().second) % 60
-        app.job_queue.run_repeating(notify_subscribers, interval=60, first=delay)
-        asyncio.create_task(price_cache_refresher())
+        delay_subs = (60 - datetime.utcnow().second) % 60
+        app.job_queue.run_repeating(notify_subscribers, interval=60, first=delay_subs)
+        delay_cache = (delay_subs + 30) % 60
+        app.job_queue.run_repeating(refresh_price_cache, interval=FETCH_INTERVAL, first=delay_cache)
         try:
             # This keeps the loop alive forever
             await asyncio.Event().wait()
