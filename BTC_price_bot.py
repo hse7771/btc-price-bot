@@ -3,9 +3,11 @@ import asyncio
 import aiohttp
 import logging
 import db
+from aiolimiter import AsyncLimiter
 from dataclasses import dataclass
 from datetime import datetime
 from dotenv import load_dotenv
+from collections import defaultdict
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, AIORateLimiter, CommandHandler, CallbackContext, CallbackQueryHandler, ContextTypes
 from typing import Any
@@ -26,6 +28,10 @@ COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_c
 PREDEFINED_INTERVALS = [10, 30, 60, 240, 1440]  # In minutes
 FETCH_INTERVAL = 60   # seconds
 CACHE_LOCK = asyncio.Lock()
+
+USER_LIMIT = defaultdict(lambda: AsyncLimiter(1, 1))
+USER_BURST = defaultdict(lambda: AsyncLimiter(30, 60))
+
 
 @dataclass(slots=True)
 class PriceCache:
@@ -477,16 +483,18 @@ async def send_or_edit(update: Update, msg: str | None = None, reply_markup: Inl
     """
     Handles sending or editing a message depending on whether it was triggered by a button click or a command.
     """
-    if update.callback_query:
-        # message editing
-        if msg:
-            await update.callback_query.edit_message_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
-        # keyboard editing
+    uid = update.effective_user.id
+    async with USER_LIMIT[uid], USER_BURST[uid]:
+        if update.callback_query:
+            # message editing
+            if msg:
+                await update.callback_query.edit_message_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
+            # keyboard editing
+            else:
+                await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
+        # new message sending
         else:
-            await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
-    # new message sending
-    else:
-        await update.message.reply_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
+            await update.message.reply_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
 
 
 # Function to start the bot
