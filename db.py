@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import aiosqlite
 import asyncio
 import logging
@@ -10,17 +12,35 @@ async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("PRAGMA journal_mode=WAL;")  # keeps readers concurrent
         await db.execute('''
-            CREATE TABLE IF NOT EXISTS currency_preferences (
-                user_id INTEGER PRIMARY KEY,
-                currencies TEXT  -- Stored as comma-separated values
-            )
-        ''')
+                CREATE TABLE IF NOT EXISTS currency_preferences (
+                    user_id INTEGER PRIMARY KEY,
+                    currencies TEXT  -- Stored as comma-separated values
+                )
+            ''')
 
         await db.execute('''
                     CREATE TABLE IF NOT EXISTS base_subscribers (
                         user_id INTEGER,
                         interval_minutes INTEGER,
                         PRIMARY KEY(user_id, interval_minutes)
+                    )
+                ''')
+
+        await db.execute('''
+                    CREATE TABLE IF NOT EXISTS personal_subscribers (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        interval_minutes INTEGER NOT NULL,
+                        first_fire_time TIMESTAMP NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+
+        await db.execute('''
+                    CREATE TABLE IF NOT EXISTS user_settings (
+                        user_id INTEGER PRIMARY KEY,
+                        tier INTEGER DEFAULT 0,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 ''')
         await db.commit()
