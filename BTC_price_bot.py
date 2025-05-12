@@ -350,6 +350,36 @@ async def open_personal_sub_menu(update: Update, context: CallbackContext) -> No
         reply_markup=reply_markup
     )
 
+
+async def view_personal_plans(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    plans = await db.get_personal_plans(user_id)
+
+    if not plans:
+        message = (
+            "ℹ️ You don’t have any personal BTC plans yet.\n\n"
+            "Use ➕ *Add Custom Plan* to create one."
+        )
+    else:
+        rows = []
+        for idx, (interval, next_iso) in enumerate(plans, 1):
+            next_dt = datetime.fromisoformat(next_iso)
+            formatted_time = next_dt.strftime("%d:%m:%y %H:%M")
+            rows.append(f"{idx}. ⏱ Every {interval} min, next: {formatted_time}")
+
+        message = "📋 *Your Personal BTC Plans:*\n\n" + "\n".join(rows)
+
+    # Show back to personal plan menu
+    keyboard = [[InlineKeyboardButton("⬅️ Back", callback_data="open_personal_sub_menu")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await send_or_edit(update,
+        message,
+        parse_mode="Markdown",
+        reply_markup=reply_markup
+    )
+
+
 def build_main_action_keyboard(label_first_button: str = "📊 Check Price", callback_first_button: str = "get_price") -> InlineKeyboardMarkup:
     keyboard = [
         [
@@ -494,6 +524,7 @@ def initialize_button_handlers():
         "subscribe_base": subscribe_base_command_click,
         "unsubscribe_base": unsubscribe_base_command_click,
         "open_personal_sub_menu": open_personal_sub_menu,
+        "view_personal": view_personal_plans,
     }
     # Dynamic handlers for currency toggles
     for currency in CURRENCIES:

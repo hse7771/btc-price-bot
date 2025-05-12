@@ -122,3 +122,15 @@ async def get_user_subscriptions(user_id: int) -> list[int]:
         ) as cursor:
             rows = await cursor.fetchall()
             return [row[0] for row in rows]
+
+
+async def get_personal_plans(user_id: int) -> list[tuple[int, str]]:
+    """
+    Returns a list of tuples (interval_minutes, first_fire_time) for the given user.
+    """
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute(
+            "SELECT interval_minutes, first_fire_time FROM personal_subscribers WHERE user_id = ?",
+            (user_id,)
+        ) as cursor:
+            return await cursor.fetchall()
