@@ -256,7 +256,7 @@ async def clear_currency_selection(update: Update, context: CallbackContext) -> 
     await send_or_edit(update, reply_markup=await build_currency_keyboard(user_id))
 
 
-async def open_base_subscription_menu(update: Update, message_text: str, callback_prefix: str):
+async def open_base_intervals(update: Update, message_text: str, callback_prefix: str):
     user_id = update.effective_user.id
     labels = {
         "base_": "⏰ Every {}",
@@ -289,7 +289,7 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
         callback_data=f"{callback_prefix}{i}"
     )] for i in intervals]
     keyboard.append([
-        InlineKeyboardButton("⬅️ Back", callback_data="cancel_subscription_menu")
+        InlineKeyboardButton("⬅️ Back", callback_data="open_base_sub_menu")
     ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -297,7 +297,7 @@ async def open_base_subscription_menu(update: Update, message_text: str, callbac
 
 
 async def subscribe_base_command_click(update: Update, context: CallbackContext):
-    await open_base_subscription_menu(
+    await open_base_intervals(
         update,
         message_text="📅 Choose how often you want BTC price updates:",
         callback_prefix="base_"
@@ -305,12 +305,50 @@ async def subscribe_base_command_click(update: Update, context: CallbackContext)
 
 
 async def unsubscribe_base_command_click(update: Update, context: CallbackContext):
-    await open_base_subscription_menu(
+    await open_base_intervals(
         update,
         message_text="⚙️ Choose interval to unsubscribe:",
         callback_prefix="unbase_"
     )
 
+
+async def open_base_sub_menu_command_click(update: Update, context: CallbackContext) -> None:
+    reply_markup = build_base_sub_keyboard()
+
+    await send_or_edit(update,
+        "📅 *Manage your base BTC price subscriptions:*\n\n"
+        "🕑 These are standard intervals (like every 10, 30, or 60 minutes).\n\n"
+        "Choose the options below:",
+        parse_mode="Markdown",
+        reply_markup=reply_markup)
+
+
+def build_base_sub_keyboard() -> InlineKeyboardMarkup:
+    keyboard = [
+        [InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base")],
+        [InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")],
+        [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+async def open_personal_sub_menu(update: Update, context: CallbackContext) -> None:
+    keyboard = [
+        [InlineKeyboardButton("📋 View My Plans", callback_data="view_personal")],
+        [InlineKeyboardButton("➕ Add Custom Plan", callback_data="add_personal")],
+        [InlineKeyboardButton("❌ Cancel Plan", callback_data="cancel_personal")],
+        [InlineKeyboardButton("💳 Upgrade", callback_data="upgrade")],
+        [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await send_or_edit(update,
+        "📆 *Manage your personal BTC update plans:*\n\n"
+        "⚙️ These are fully customizable timers (e.g., every 7 min, daily at 14:00).\n\n"
+        "Choose an option below:",
+        parse_mode="Markdown",
+        reply_markup=reply_markup
+    )
 
 def build_main_action_keyboard(label_first_button: str = "📊 Check Price", callback_first_button: str = "get_price") -> InlineKeyboardMarkup:
     keyboard = [
@@ -319,8 +357,8 @@ def build_main_action_keyboard(label_first_button: str = "📊 Check Price", cal
             InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")
         ],
         [
-            InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base"),
-            InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")
+            InlineKeyboardButton("🔔 Base Plan", callback_data="open_base_sub_menu"),
+            InlineKeyboardButton("📆 Personal Plan", callback_data="open_personal_sub_menu")
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -329,26 +367,26 @@ def build_main_action_keyboard(label_first_button: str = "📊 Check Price", cal
 async def confirm_base_sub(update, context, interval):
     user_id = update.effective_user.id
     await db.add_base_subscription(user_id, interval)
-    reply_markup = build_main_action_keyboard()
+    reply_markup = build_base_sub_keyboard()
 
     await send_or_edit(update,
-    f"✅ Subscribed to updates every {format_interval(interval)}!",
+    f"✅ Subscribed to updates every {format_interval(interval)}",
         parse_mode="Markdown",
         reply_markup=reply_markup)
 
 async def confirm_unbase_sub(update, context, interval):
     user_id = update.effective_user.id
     await db.remove_base_subscription(user_id, interval)
-    reply_markup = build_main_action_keyboard()
+    reply_markup = build_base_sub_keyboard()
 
     await send_or_edit(update,
-    f"❌ Unsubscribed from {format_interval(interval)} updates.",
-    parse_mode="Markdown",
-    reply_markup=reply_markup
-    )
+    f"❌ Unsubscribed from {format_interval(interval)} updates",
+        parse_mode="Markdown",
+        reply_markup=reply_markup
+        )
 
 
-async def cancel_subscription_menu_click(update: Update, context: CallbackContext):
+async def open_main_menu(update: Update, context: CallbackContext):
     await get_price_command_click(update, context)
 
 
@@ -435,8 +473,8 @@ async def start_command(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [InlineKeyboardButton("📊 Price", callback_data="get_price")],
         [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")],
-        [InlineKeyboardButton("🔔 Subscribe", callback_data="subscribe_base")],
-        [InlineKeyboardButton("🛑 Unsubscribe", callback_data="unsubscribe_base")],
+        [InlineKeyboardButton("🔔 Base Plan", callback_data="open_base_sub_menu")],
+        [InlineKeyboardButton("📆 Personal Plan", callback_data="open_personal_sub_menu")],
         [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -451,9 +489,11 @@ def initialize_button_handlers():
         "open_currency_menu": set_currency_command_click,
         "close_menu": confirm_currency_selection,
         "currency_clear": clear_currency_selection,
+        "open_main_menu": open_main_menu,
+        "open_base_sub_menu": open_base_sub_menu_command_click,
         "subscribe_base": subscribe_base_command_click,
         "unsubscribe_base": unsubscribe_base_command_click,
-        "cancel_subscription_menu": cancel_subscription_menu_click,
+        "open_personal_sub_menu": open_personal_sub_menu,
     }
     # Dynamic handlers for currency toggles
     for currency in CURRENCIES:
