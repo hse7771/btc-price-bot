@@ -25,7 +25,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=lo
 CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "CNY"]
 BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
-PREDEFINED_INTERVALS = [10, 30, 60, 240, 1440]  # In minutes
+PREDEFINED_INTERVALS = [15, 30, 60, 240, 1440]  # In minutes
 FETCH_INTERVAL = 60   # seconds
 CACHE_LOCK = asyncio.Lock()
 
@@ -271,7 +271,7 @@ async def open_base_intervals(update: Update, message_text: str, callback_prefix
         if not user_subs:
             await send_or_edit(update,
             "🚫 You have no active subscriptions to cancel.",
-                reply_markup=build_main_action_keyboard()
+                reply_markup=build_base_sub_keyboard()
             )
             return
         intervals = user_subs
@@ -279,7 +279,7 @@ async def open_base_intervals(update: Update, message_text: str, callback_prefix
         if len(user_subs) >= len(PREDEFINED_INTERVALS):
             await send_or_edit(update,
             "✅ You are already subscribed to all available intervals!",
-                reply_markup=build_main_action_keyboard()
+                reply_markup=build_base_sub_keyboard()
             )
             return
         intervals = [i for i in PREDEFINED_INTERVALS if i not in user_subs]
@@ -317,7 +317,7 @@ async def open_base_sub_menu_command_click(update: Update, context: CallbackCont
 
     await send_or_edit(update,
         "📅 *Manage your base BTC price subscriptions:*\n\n"
-        "🕑 These are standard intervals (like every 10, 30, or 60 minutes).\n\n"
+        "🕑 These are standard intervals: every 15, 30, 60 minutes, 4 hours, and 24 hours.\n\n"
         "Choose the options below:",
         parse_mode="Markdown",
         reply_markup=reply_markup)
