@@ -351,7 +351,7 @@ async def open_personal_sub_menu(update: Update, context: CallbackContext) -> No
     )
 
 
-async def view_personal_plans(update: Update, context: CallbackContext) -> None:
+async def view_personal_plans_command_click(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     plans = await db.get_personal_plans(user_id)
 
@@ -480,10 +480,20 @@ async def help_command(update: Update, context: CallbackContext) -> None:
         "/help – Show this help message\n"
         "/price – Show the current Bitcoin price\n"
         "/set_currency – Choose which currencies you want to see\n"
-        "/subscribe – Subscribe to regular BTC updates (e.g. every 15, 30, 60 min)\n"
-        "/unsubscribe – Cancel your base update subscriptions\n"
-        "/reset – Reset all your preferences and subscriptions\n"
-        "/change_language – Change the language",
+        
+        "📅 *Base Plan Subscriptions:*\n"
+        "/subscribe_base – Subscribe to regular BTC updates (e.g. every 15, 30, 60 min)\n"
+        "/unsubscribe_base – Cancel your base plan subscriptions\n\n"
+        
+        "📆 *Personal Plans:*\n"
+        "/add_personal – Add a custom BTC subscription\n"
+        "/view_personal – View your custom subscriptions\n"
+        "/cancel_personal – Remove a personal subscription\n\n"
+                             
+        "💳 *Account & Settings:*\n"
+        "/upgrade – Learn about Pro/Ultra tiers\n"
+        "/reset – Reset all your preferences\n"
+        "/change_language – Change the interface language",
         parse_mode="Markdown"
     )
 
@@ -524,7 +534,7 @@ def initialize_button_handlers():
         "subscribe_base": subscribe_base_command_click,
         "unsubscribe_base": unsubscribe_base_command_click,
         "open_personal_sub_menu": open_personal_sub_menu,
-        "view_personal": view_personal_plans,
+        "view_personal": view_personal_plans_command_click,
     }
     # Dynamic handlers for currency toggles
     for currency in CURRENCIES:
@@ -588,8 +598,9 @@ async def main():
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("price", get_price_command_click))
     app.add_handler(CommandHandler("set_currency", set_currency_command_click))
-    app.add_handler(CommandHandler("subscribe", subscribe_base_command_click))
-    app.add_handler(CommandHandler("unsubscribe", unsubscribe_base_command_click))
+    app.add_handler(CommandHandler("subscribe_base", subscribe_base_command_click))
+    app.add_handler(CommandHandler("unsubscribe_base", unsubscribe_base_command_click))
+    app.add_handler(CommandHandler("view_personal", view_personal_plans_command_click))
     app.add_handler(CallbackQueryHandler(button_click_handler))
 
     # Start polling for messages
