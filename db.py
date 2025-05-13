@@ -172,3 +172,11 @@ async def count_personal_plans(user_id: int) -> int:
     ) as cur:
         row = await cur.fetchone()
         return row[0] if row else 0
+
+
+async def get_user_tier(user_id: int) -> int:
+    db = await get_db()
+
+    async with db.execute("SELECT tier FROM user_settings WHERE user_id = ?", (user_id,)) as cursor:
+        row = await cursor.fetchone()
+        return row[0] if row else 0
