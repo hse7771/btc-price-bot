@@ -276,6 +276,68 @@ After saving, Git will open the commit message editor for the first commit (`123
 
 ---
 
+### 🧱 Attaching New Changes to a Previous Commit
+
+Sometimes you realize that a new change belongs in a previous commit — not the last one — but you already have unrelated work in progress that you don't want to lose or mix.
+
+This section explains how to isolate and attach your change to a past commit safely, even when your working directory contains other edits.
+
+#### ✅ Goal
+- Attach a new change to a specific older commit (e.g., 2 commits ago)
+- Leave unrelated in-progress changes untouched
+
+#### 🛠 Steps
+
+1. **Stage only the file (or chunk) you want to attach:**
+   ```bash
+   git add <file>
+   ```
+   Or, to selectively stage parts:
+   ```bash
+   git add -p <file>
+   ```
+
+2. **Temporarily commit the staged change:**
+   ```bash
+   git commit -m "TEMP: will be squashed into earlier commit"
+   ```
+
+3. **Stash all unrelated, unstaged changes:**
+   ```bash
+   git stash push -m "temp: unrelated work"
+   ```
+
+4. **Start an interactive rebase, going far enough back to include the target commit and your TEMP commit:**
+   ```bash
+   git rebase -i HEAD~N  # e.g., HEAD~3
+   ```
+
+5. **Reorder and change the rebase lines:**
+   Move the `TEMP` commit below the commit it should be merged into, and change `pick` to `fixup` (or `squash` if you want to edit the message).
+
+   Example:
+   ```
+   pick abc1234 feat: add login endpoint
+   fixup def5678 TEMP: will be squashed into earlier commit
+   pick 7890abc feat: add get-tier logic
+   ```
+
+6. **Let Git apply the rebase and squash the commits.**
+
+7. **Restore your stashed unrelated changes:**
+   ```bash
+   git stash pop
+   ```
+
+> ⚠️ If you've already pushed the branch, don't forget to force-push after rebase:
+> ```bash
+> git push --force-with-lease
+> ```
+
+✅ You’ve now cleanly inserted your change into the correct commit — without touching or losing any unrelated work!
+
+---
+
 ### 🔁 Renaming a Branch
 
 If you realize the branch name is incorrect or unclear:
