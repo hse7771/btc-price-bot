@@ -1,0 +1,58 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackContext
+
+from config import CURRENCIES, PREDEFINED_INTERVALS
+from handlers.price import get_price_command_click, refresh_price_click
+from handlers.currency import (set_currency_command_click, toggle_currency, confirm_currency_selection,
+                               clear_currency_selection)
+from handlers.base_plan import (open_base_sub_menu_command_click, subscribe_base_command_click,
+                                unsubscribe_base_command_click, confirm_base_sub, confirm_unbase_sub)
+from handlers.personal_plan import open_personal_sub_menu, view_personal_plans_command_click
+from handlers.core import open_main_menu
+from util import send_or_edit
+
+
+def initialize_button_handlers():
+    # Map callback_data to handlers
+    handlers = {
+        "get_price": get_price_command_click,
+        "refresh_price": refresh_price_click,
+        "open_currency_menu": set_currency_command_click,
+        "close_menu": confirm_currency_selection,
+        "currency_clear": clear_currency_selection,
+        "open_main_menu": open_main_menu,
+        "open_base_sub_menu": open_base_sub_menu_command_click,
+        "subscribe_base": subscribe_base_command_click,
+        "unsubscribe_base": unsubscribe_base_command_click,
+        "open_personal_sub_menu": open_personal_sub_menu,
+        "view_personal": view_personal_plans_command_click,
+    }
+    # Dynamic handlers for currency toggles
+    for currency in CURRENCIES:
+        handlers[f"toggle_{currency}"] = lambda u, c, curr=currency: toggle_currency(u, c, curr)
+    # Dynamic handlers for base/unbase subscription per interval
+    for interval in PREDEFINED_INTERVALS:
+        handlers[f"base_{interval}"] = lambda u, c, i=interval: confirm_base_sub(u, c, i)
+        handlers[f"unbase_{interval}"] = lambda u, c, i=interval: confirm_unbase_sub(u, c, i)
+
+    return handlers
+
+
+BUTTON_HANDLERS = initialize_button_handlers()
+
+
+async def button_click_handler(update: Update, context: CallbackContext) -> None:
+    """Handles button press for 📊 Price."""
+    query = update.callback_query
+    await query.answer()  # Acknowledge button press to Telegram
+
+    handler = BUTTON_HANDLERS.get(query.data)
+    if handler:
+        await handler(update, context)
+    else:
+        await send_or_edit(update,
+                           "❓ Unknown action.",
+                           reply_markup=InlineKeyboardMarkup([
+                               [InlineKeyboardButton("🏠 Main Menu", callback_data="open_main_menu")]
+                           ])
+                           )

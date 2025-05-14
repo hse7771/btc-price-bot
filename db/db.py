@@ -4,7 +4,7 @@ import aiosqlite
 import asyncio
 import logging
 
-DB_NAME = "BTC_bot_data.db"
+DB_NAME = "db/database files/BTC_bot_data.db"
 MAX_RETRIES        = 2          # 1 original try + 1 retry
 LOCK_RETRY_DELAY   = 0.05       # seconds (50ms)
 
