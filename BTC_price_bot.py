@@ -2,15 +2,17 @@ import asyncio
 import logging
 from datetime import datetime
 
-from telegram.ext import (Application, AIORateLimiter, CommandHandler, CallbackQueryHandler)
+from telegram.ext import (Application, AIORateLimiter, CommandHandler, CallbackQueryHandler, ConversationHandler,
+                          MessageHandler, filters)
 
-from config import TOKEN, FETCH_INTERVAL
+from config import TOKEN, FETCH_INTERVAL, GET_INTERVAL, GET_START_TIME
 from db.db import init_db
 from util import close_http_session
 from handlers.price import get_price_command_click, refresh_price_cache
 from handlers.currency import set_currency_command_click
 from handlers.base_plan import subscribe_base_command_click, unsubscribe_base_command_click
-from handlers.personal_plan import (view_personal_plans_command_click)
+from handlers.personal_plan import (view_personal_plans_command_click, add_personal_start, add_personal_interval,
+                                    add_personal_start_time, cancel_add_process_personal_p)
 from handlers.core import start_command, help_command
 from button_router import button_click_handler
 from scheduler import notify_subscribers
@@ -46,7 +48,22 @@ async def main():
 
     app.add_handler(CommandHandler("view_personal", view_personal_plans_command_click))
 
-
+    add_personal_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(add_personal_start, pattern="^add_personal$"),
+                      CommandHandler("add_personal", add_personal_start)],
+        states={
+            GET_INTERVAL: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_interval),
+                CallbackQueryHandler(cancel_add_process_personal_p, pattern= "^cancel_add_process_personal_p$"),
+            ],
+            GET_START_TIME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_start_time),
+                CallbackQueryHandler(cancel_add_process_personal_p, pattern= "^cancel_add_process_personal_p$"),
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel_add_process_personal_p)],
+    )
+    app.add_handler(add_personal_conv)
 
     app.add_handler(CallbackQueryHandler(button_click_handler))
 
