@@ -332,7 +332,7 @@ def build_base_sub_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-async def open_personal_sub_menu(update: Update, context: CallbackContext) -> None:
+def build_personal_sub_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
         [InlineKeyboardButton("📋 View My Plans", callback_data="view_personal")],
         [InlineKeyboardButton("➕ Add Custom Plan", callback_data="add_personal")],
@@ -340,11 +340,15 @@ async def open_personal_sub_menu(update: Update, context: CallbackContext) -> No
         [InlineKeyboardButton("💳 Upgrade", callback_data="upgrade")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(keyboard)
+
+
+async def open_personal_sub_menu(update: Update, context: CallbackContext) -> None:
+    reply_markup = build_personal_sub_keyboard()
 
     await send_or_edit(update,
         "📆 *Manage your personal BTC update plans:*\n\n"
-        "⚙️ These are fully customizable timers (e.g., every 7 min, daily at 14:00).\n\n"
+        "⚙️ These are fully customizable timers (e.g., every 7 min, start at 14:00).\n\n"
         "Choose an option below:",
         parse_mode="Markdown",
         reply_markup=reply_markup
