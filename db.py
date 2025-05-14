@@ -152,3 +152,23 @@ async def get_personal_plans(user_id: int) -> list[tuple[int, str]]:
             (user_id,)
         ) as cursor:
             return await cursor.fetchall()
+
+
+ADD_PERSONAL = """
+INSERT INTO personal_subscribers (user_id, interval_minutes, first_fire_time)
+VALUES (?, ?, ?)
+"""
+
+async def add_personal_plan(user_id: int, interval: int, first_fire_time: datetime) -> None:
+    db = await get_db()                                        # 🟢 shared conn
+    await execute_write(db, ADD_PERSONAL, (user_id, interval, first_fire_time))
+
+
+async def count_personal_plans(user_id: int) -> int:
+    db = await get_db()
+    async with db.execute(
+        "SELECT COUNT(*) FROM personal_subscribers WHERE user_id = ?",
+        (user_id,)
+    ) as cur:
+        row = await cur.fetchone()
+        return row[0] if row else 0
