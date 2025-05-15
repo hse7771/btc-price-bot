@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
 
 from config import PREDEFINED_INTERVALS
-from db.db import get_user_subscriptions, add_base_subscription, remove_base_subscription
+from db.db import get_user_base_subscriptions, add_base_subscription, remove_base_subscription
 from util import send_or_edit
 from keyboard import build_base_sub_keyboard
 
@@ -41,7 +41,7 @@ async def open_base_intervals(update: Update, message_text: str, callback_prefix
     }
     label_template = labels.get(callback_prefix, "⏰ Every {}")  # fallback for safety
 
-    user_subs = await get_user_subscriptions(user_id)  # list of intervals
+    user_subs = await get_user_base_subscriptions(user_id)  # list of intervals
     intervals = PREDEFINED_INTERVALS
 
     if callback_prefix.startswith("unbase_"):

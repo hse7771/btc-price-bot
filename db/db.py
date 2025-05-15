@@ -130,7 +130,7 @@ async def get_base_subscribers(interval: int) -> list[int]:
             rows = await cursor.fetchall()
             return [row[0] for row in rows]
 
-async def get_user_subscriptions(user_id: int) -> list[int]:
+async def get_user_base_subscriptions(user_id: int) -> list[int]:
     """Returns a list of intervals the user is subscribed to."""
     db = await get_db()
 
@@ -180,3 +180,14 @@ async def get_user_tier(user_id: int) -> int:
     async with db.execute("SELECT tier FROM user_settings WHERE user_id = ?", (user_id,)) as cursor:
         row = await cursor.fetchone()
         return row[0] if row else 0
+
+
+async def get_all_personal() -> list[tuple[int, int, str]]:
+    """
+    Returns [(user_id, interval_minutes, first_fire_iso)] for *all* rows.
+    """
+    db = await get_db()
+    async with db.execute(
+        "SELECT user_id, interval_minutes, first_fire_time FROM personal_subscribers"
+    ) as cur:
+        return await cur.fetchall()
