@@ -4,7 +4,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext, ConversationHandler
 
 from config import TIER_LIMITS, GET_INTERVAL, GET_START_TIME
-from db.db import get_personal_plans, get_user_tier, count_personal_plans, add_personal_plan
+from db.db import get_personal_plans, get_user_tier, count_personal_plans, add_personal_plan, delete_personal_plan
 from util import send_or_edit
 from keyboard import build_personal_sub_keyboard
 
@@ -32,7 +32,7 @@ async def view_personal_plans_command_click(update: Update, context: CallbackCon
         )
     else:
         rows = []
-        for idx, (interval, next_iso) in enumerate(plans, 1):
+        for idx, (plan_id, interval, next_iso) in enumerate(plans, 1):
             next_dt = datetime.fromisoformat(next_iso)
             formatted_time = next_dt.strftime("%H:%M %d.%m.%y")
             rows.append(f"{idx}. ⏱ Every {interval} min, start: {formatted_time}")
@@ -139,11 +139,11 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
     if first_fire <= datetime.utcnow():  # time already passed today
         first_fire += timedelta(days=1)
 
-    await add_personal_plan(user_id, interval, first_fire)
+    await add_personal_plan(user_id, interval, first_fire.isoformat(" "))
 
     await send_or_edit(update,
         f"✅ Custom plan saved:\n"
-        f"Every {interval} min, start time: {hour:02}:{minute:02}.",
+        f"Every {interval} min, start: {hour:02}:{minute:02}.",
                        reply_markup=build_personal_sub_keyboard()
     )
     return ConversationHandler.END
@@ -153,3 +153,40 @@ async def cancel_add_process_personal_p(update: Update, context: CallbackContext
     await send_or_edit(update, "❌ Action cancelled.")
     await open_personal_sub_menu(update, context)
     return ConversationHandler.END
+
+
+async def open_cancel_personal_menu(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+    plans = await get_personal_plans(user_id)
+
+    if not plans:
+        await send_or_edit(update, "📭 You don’t have any personal plans to cancel.")
+        await open_personal_sub_menu(update, context)
+        return
+
+    message = "*🗑️ Select a plan to cancel:*"
+    buttons = []
+
+    for plan_id, interval, first_fire_time in plans:
+        next_dt = datetime.fromisoformat(first_fire_time)
+        formatted_time = next_dt.strftime("%H:%M %d.%m.%y")
+        buttons.append([
+            InlineKeyboardButton(
+                f"❌ ⏱ Every {interval} min, {formatted_time} ",
+                callback_data=f"cancel_personal_plan_{plan_id}"
+            )
+        ])
+
+    buttons.append([InlineKeyboardButton("⬅️ Back", callback_data="open_personal_sub_menu")])
+    reply_markup = InlineKeyboardMarkup(buttons)
+
+    await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
+
+
+async def cancel_personal_plan(update: Update, context: CallbackContext):
+    plan_id = int(update.callback_query.data.split("_")[-1])
+
+    await delete_personal_plan(plan_id)
+
+    await send_or_edit(update, "✅ Plan cancelled.")
+    await open_personal_sub_menu(update, context)

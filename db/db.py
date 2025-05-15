@@ -141,14 +141,14 @@ async def get_user_base_subscriptions(user_id: int) -> list[int]:
             return [row[0] for row in rows]
 
 
-async def get_personal_plans(user_id: int) -> list[tuple[int, str]]:
+async def get_personal_plans(user_id: int) -> list[tuple[int, int, str]]:
     """
     Returns a list of tuples (interval_minutes, first_fire_time) for the given user.
     """
     db = await get_db()
 
     async with db.execute(
-            "SELECT interval_minutes, first_fire_time FROM personal_subscribers WHERE user_id = ?",
+            "SELECT id, interval_minutes, first_fire_time FROM personal_subscribers WHERE user_id = ?",
             (user_id,)
         ) as cursor:
             return await cursor.fetchall()
@@ -159,7 +159,7 @@ INSERT INTO personal_subscribers (user_id, interval_minutes, first_fire_time)
 VALUES (?, ?, ?)
 """
 
-async def add_personal_plan(user_id: int, interval: int, first_fire_time: datetime) -> None:
+async def add_personal_plan(user_id: int, interval: int, first_fire_time: str) -> None:
     db = await get_db()                                        # 🟢 shared conn
     await execute_write(db, ADD_PERSONAL, (user_id, interval, first_fire_time))
 
@@ -191,3 +191,9 @@ async def get_all_personal() -> list[tuple[int, int, str]]:
         "SELECT user_id, interval_minutes, first_fire_time FROM personal_subscribers"
     ) as cur:
         return await cur.fetchall()
+
+
+REMOVE_PERSONAL_SUB = """DELETE FROM personal_subscribers WHERE id = ?"""
+async def delete_personal_plan(plan_id: int):
+    db = await get_db()
+    await execute_write(db, REMOVE_PERSONAL_SUB, (plan_id, ))

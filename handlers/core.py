@@ -18,7 +18,7 @@ async def start_command(update: Update, context: CallbackContext) -> None:
 
     keyboard = [
         [InlineKeyboardButton("📊 Price", callback_data="get_price")],
-        [InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")],
+        [InlineKeyboardButton("💱 Change Currency", callback_data="open_currency_menu")],
         [InlineKeyboardButton("🔔 Base Plan", callback_data="open_base_sub_menu")],
         [InlineKeyboardButton("📆 Personal Plan", callback_data="open_personal_sub_menu")],
         [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")],

@@ -52,7 +52,7 @@ def build_personal_sub_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
         [InlineKeyboardButton("📋 View My Plans", callback_data="view_personal")],
         [InlineKeyboardButton("➕ Add Custom Plan", callback_data="add_personal")],
-        [InlineKeyboardButton("❌ Cancel Plan", callback_data="cancel_personal")],
+        [InlineKeyboardButton("❌ Cancel Plan", callback_data="open_cancel_personal_menu")],
         [InlineKeyboardButton("💳 Upgrade", callback_data="upgrade")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
     ]

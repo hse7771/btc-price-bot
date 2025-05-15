@@ -12,7 +12,8 @@ from handlers.price import get_price_command_click, refresh_price_cache
 from handlers.currency import set_currency_command_click
 from handlers.base_plan import subscribe_base_command_click, unsubscribe_base_command_click
 from handlers.personal_plan import (view_personal_plans_command_click, add_personal_start, add_personal_interval,
-                                    add_personal_start_time, cancel_add_process_personal_p)
+                                    add_personal_start_time, cancel_add_process_personal_p, open_cancel_personal_menu,
+                                    cancel_personal_plan)
 from handlers.core import start_command, help_command
 from button_router import button_click_handler
 from scheduler import notify_subscribers
@@ -47,6 +48,7 @@ async def main():
     app.add_handler(CommandHandler("unsubscribe_base", unsubscribe_base_command_click))
 
     app.add_handler(CommandHandler("view_personal", view_personal_plans_command_click))
+    app.add_handler(CommandHandler("cancel_personal", open_cancel_personal_menu))
 
     add_personal_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(add_personal_start, pattern="^add_personal$"),
@@ -61,9 +63,10 @@ async def main():
                 CallbackQueryHandler(cancel_add_process_personal_p, pattern= "^cancel_add_process_personal_p$"),
             ],
         },
-        fallbacks=[CommandHandler("cancel", cancel_add_process_personal_p)],
+        fallbacks=[],
     )
     app.add_handler(add_personal_conv)
+    app.add_handler(CallbackQueryHandler(cancel_personal_plan, pattern=r"^cancel_personal_plan_\d+$"))
 
     app.add_handler(CallbackQueryHandler(button_click_handler))
 

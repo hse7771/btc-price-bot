@@ -7,7 +7,7 @@ from handlers.currency import (set_currency_command_click, toggle_currency, conf
                                clear_currency_selection)
 from handlers.base_plan import (open_base_sub_menu_command_click, subscribe_base_command_click,
                                 unsubscribe_base_command_click, confirm_base_sub, confirm_unbase_sub)
-from handlers.personal_plan import open_personal_sub_menu, view_personal_plans_command_click
+from handlers.personal_plan import open_personal_sub_menu, view_personal_plans_command_click, open_cancel_personal_menu
 from handlers.core import open_main_menu
 from util import send_or_edit
 
@@ -26,6 +26,7 @@ def initialize_button_handlers():
         "unsubscribe_base": unsubscribe_base_command_click,
         "open_personal_sub_menu": open_personal_sub_menu,
         "view_personal": view_personal_plans_command_click,
+        "open_cancel_personal_menu": open_cancel_personal_menu,
     }
     # Dynamic handlers for currency toggles
     for currency in CURRENCIES:
