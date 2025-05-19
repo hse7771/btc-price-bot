@@ -9,7 +9,7 @@ from telegram.ext import CallbackContext
 
 from config import CURRENCIES, COINGECKO_API, BLOCKCHAIN_API, FETCH_INTERVAL
 from util import send_or_edit, format_price_message, get_http_session, fetch_json
-from keyboard import build_main_action_keyboard
+from keyboard import build_price_keyboard
 
 
 @dataclass(slots=True)
@@ -44,7 +44,7 @@ async def _show_price(update: Update, context: CallbackContext) -> None:
         return
 
     message = await format_price_message(price_data, user_id)
-    reply_markup = build_main_action_keyboard("🔄 Refresh Price", "refresh_price")
+    reply_markup = build_price_keyboard("🔄 Refresh Price", "refresh_price")
 
     await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 

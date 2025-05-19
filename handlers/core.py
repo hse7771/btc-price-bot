@@ -1,6 +1,7 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import CallbackContext
 
+from keyboard import build_main_keyboard
 from util import send_or_edit
 from handlers.price import get_price_command_click
 
@@ -16,14 +17,7 @@ async def start_command(update: Update, context: CallbackContext) -> None:
         "👇 Use the buttons below to get started:"
     )
 
-    keyboard = [
-        [InlineKeyboardButton("📊 Price", callback_data="get_price")],
-        [InlineKeyboardButton("💱 Change Currency", callback_data="open_currency_menu")],
-        [InlineKeyboardButton("🔔 Base Plan", callback_data="open_base_sub_menu")],
-        [InlineKeyboardButton("📆 Personal Plan", callback_data="open_personal_sub_menu")],
-        [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = build_main_keyboard()
     await send_or_edit(update, welcome_message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
@@ -52,5 +46,15 @@ async def help_command(update: Update, context: CallbackContext) -> None:
                                 )
 
 
-async def open_main_menu(update: Update, context: CallbackContext):
-    await get_price_command_click(update, context)
+async def open_main_menu(update: Update, context: CallbackContext) -> None:
+    reply_markup = build_main_keyboard()
+
+    await send_or_edit(update,
+                       "🏠 <b>Main Menu</b>\n\n"
+                       "Choose an action below:\n"
+                       "• Check BTC price\n"
+                       "• Manage subscriptions\n"
+                       "• Customize time and currency settings",
+                       reply_markup=reply_markup,
+                       parse_mode="HTML"
+                       )
