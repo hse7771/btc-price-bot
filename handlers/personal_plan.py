@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext, ConversationHandler
 
-from config import TIER_LIMITS, GET_INTERVAL, GET_START_TIME
 from db.db import get_personal_plans, get_user_tier, count_personal_plans, add_personal_plan, delete_personal_plan
+from config import TIER_LIMITS, GET_INTERVAL, GET_START_TIME, FREE_TIER, PRO_TIER, ULTRA_TIER, TierConvertFromNumber
 from util import send_or_edit
 from keyboard import build_personal_sub_keyboard
 
@@ -49,9 +49,12 @@ async def view_personal_plans_command_click(update: Update, context: CallbackCon
 
 async def add_personal_start(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
+
     # Validate tier
     tier = await get_user_tier(user_id)
-    max_plans, min_interval = TIER_LIMITS.get(tier, (1, 5))
+    tier_limit = TIER_LIMITS.get(TierConvertFromNumber(tier), FREE_TIER)
+    max_plans, min_interval = tier_limit.amount, tier_limit.interval
+
     existing = await count_personal_plans(user_id)
 
     if existing >= max_plans:
@@ -68,9 +71,9 @@ async def add_personal_start(update: Update, context: CallbackContext) -> int:
     context.user_data["tier"] = tier
     await send_or_edit(update,
             "🕒 *Enter your desired interval in minutes (e.g. 15):*\n"
-            "📌 Free tier: ≥5 min, 1 plan\n"
-            "📌 Pro tier: ≥1 min, up to 3 plans\n"
-            "📌 Ultra tier: ≥1 min, up to 5 plans",
+            f"📌 Free tier: ≥{FREE_TIER.interval} min, {FREE_TIER.amount} plan\n"
+            f"📌 Pro tier: ≥{PRO_TIER.interval} min, up to {PRO_TIER.amount} plans\n"
+            f"📌 Ultra tier: ≥{ULTRA_TIER.interval} min, up to {ULTRA_TIER.amount} plans",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                [InlineKeyboardButton("❌ Cancel", callback_data="cancel_add_process_personal_p")]
@@ -93,7 +96,8 @@ async def add_personal_interval(update: Update, context: CallbackContext) -> int
         return GET_INTERVAL
 
     tier = context.user_data.get("tier", 0)
-    max_plans, min_interval = TIER_LIMITS.get(tier, (1, 5))
+    tier_limit = TIER_LIMITS.get(TierConvertFromNumber(tier), FREE_TIER)
+    max_plans, min_interval = tier_limit.amount, tier_limit.interval
 
     if interval < min_interval:
         await send_or_edit(update,
