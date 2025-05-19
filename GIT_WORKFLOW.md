@@ -165,40 +165,76 @@ A collection of useful workflows for handling common mistakes and cleanup in you
 
 ### 🧩 Handling Mistaken Changes on the Wrong Branch
 
-Sometimes you might accidentally make changes on a feature branch that belong on the base branch (e.g., `develop`). For example, you updated `README.md` while working on a feature, but now want to commit that change to `develop` instead.
+Sometimes you might accidentally make changes on a feature branch that belong on the base branch (e.g., `main` or `develop`). You may even have **multiple files**, where:
+- Some files should move entirely
+- Some files need only partial changes moved
+- Other changes should remain in your current feature branch
+
+This section helps you cleanly transfer only the changes you want — and leave the rest untouched.
 
 #### ✅ Goal
-- Move only `README.md` changes to the base branch
-- Keep other in-progress changes on the current feature branch
+- Move specific full and partial changes to the base branch
+- Leave unrelated or unfinished changes safely on the feature branch
 
 #### 🛠 Steps
-```bash
-# 1. Stage only the file to move
-git add README.md
 
-# 2. Stash only the staged part
-git stash push -m "Move README to develop" --staged
+1. **Stage the exact changes to move:**
+   - Stage full files:
+     ```bash
+     git add path/to/fileA.py
+     ```
+   - Stage part of a file interactively:
+     ```bash
+     git add -p path/to/fileB.py
+     ```
 
-# 3. Switch to base branch
-git checkout develop
+2. **Commit those staged changes temporarily:**
+   ```bash
+   git commit -m "TEMP: move to base branch"
+   ```
 
-# 4. Apply the stash
-git stash pop
+3. **(Optional but safe) Stash remaining changes:**
+   ```bash
+   git stash -m "WIP: keep remaining feature work"
+   ```
 
-# 5. Commit on base branch
-git add README.md
-git commit -m "docs(readme): update commit and branching guide"
-git push origin develop
+4. **Switch to the base branch:**
+   ```bash
+   git checkout develop
+   ```
 
-# 6. Return to feature branch
-git checkout feature/your-branch
-```
+5. **Cherry-pick the temp commit:**
+   ```bash
+   git cherry-pick <commit-hash>
+   ```
 
-For partial changes in the same file (e.g., `main.py`), use patch mode:
-```bash
-git add -p main.py
-```
-This allows you to select only the relevant changes.
+   Get the commit hash via:
+   ```bash
+   git log --oneline
+   ```
+
+6. **Reword the commit message:**
+   ```bash
+   git commit --amend -m "feat(x): move changes from feature branch"
+   ```
+
+7. **Return to your feature branch:**
+   ```bash
+   git checkout feature/your-branch
+   ```
+
+8. **Remove TEMP commit from feature branch:**
+   ```bash
+   git reset --hard HEAD~1
+   ```
+
+9. **(If stashed) Restore your remaining work:**
+   ```bash
+   git stash pop
+   ```
+
+✅ You’ve now surgically moved only the intended changes to the correct branch — without losing or polluting your in-progress work.
+
 
 ---
 
