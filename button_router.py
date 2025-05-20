@@ -9,6 +9,7 @@ from handlers.base_plan import (open_base_sub_menu_command_click, subscribe_base
                                 unsubscribe_base_command_click, confirm_base_sub, confirm_unbase_sub)
 from handlers.personal_plan import open_personal_sub_menu, view_personal_plans_command_click, open_cancel_personal_menu
 from handlers.core import open_main_menu
+from handlers.timezone import open_time_settings_menu
 from util import send_or_edit
 
 
@@ -27,6 +28,7 @@ def initialize_button_handlers():
         "open_personal_sub_menu": open_personal_sub_menu,
         "view_personal": view_personal_plans_command_click,
         "open_cancel_personal_menu": open_cancel_personal_menu,
+        "open_time_settings_menu": open_time_settings_menu,
     }
     # Dynamic handlers for currency toggles
     for currency in CURRENCIES:
