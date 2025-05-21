@@ -1,5 +1,7 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+from typing import Dict
 from collections import defaultdict
 
 import aiohttp
@@ -74,3 +76,31 @@ async def format_price_message(price_data: dict, user_id: int) -> str:
     now = datetime.now().strftime("%H:%M:%S")
     message += f"\n🕒 Last updated at: `{now}`"
     return message
+
+
+def convert_local_to_utc(local_dt: datetime, tz_data: Dict) -> datetime:
+    """
+    Convert *naive* local_dt (user clock) → *naive* UTC datetime
+    """
+    tz_name, offset, method = tz_data["timezone"], tz_data["offset_minutes"], tz_data["method"]
+    if method == "location" and tz_name:
+        zone = ZoneInfo(tz_name)
+        # Attach local zone, then convert to UTC
+        aware_local = local_dt.replace(tzinfo=zone)
+        return aware_local.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+    else:
+        # manual or no-setting ⇒ fixed offset
+        return local_dt - timedelta(minutes=offset)
+
+
+def convert_utc_to_local(utc_dt: datetime, tz_data: Dict) -> datetime:
+    """
+    Convert *naive* UTC datetime → *naive* local datetime
+    """
+    tz_name, offset, method = tz_data["timezone"], tz_data["offset_minutes"], tz_data["method"]
+    if method == "location" and tz_name:
+        zone = ZoneInfo(tz_name)
+        aware_utc = utc_dt.replace(tzinfo=ZoneInfo("UTC"))
+        return aware_utc.astimezone(zone).replace(tzinfo=None)
+    else:
+        return utc_dt + timedelta(minutes=offset)
