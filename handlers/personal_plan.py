@@ -3,9 +3,11 @@ from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext, ConversationHandler
 
-from db.db import get_personal_plans, get_user_tier, count_personal_plans, add_personal_plan, delete_personal_plan
+from db.db import get_personal_plans, get_user_tier, count_personal_plans, add_personal_plan, delete_personal_plan, \
+    get_user_timezone
 from config import TIER_LIMITS, GET_INTERVAL, GET_START_TIME, FREE_TIER, PRO_TIER, ULTRA_TIER, TierConvertFromNumber
-from util import send_or_edit
+from handlers.timezone import open_time_settings_menu
+from util import send_or_edit, convert_utc_to_local, convert_local_to_utc
 from keyboard import build_personal_sub_keyboard
 
 
@@ -31,10 +33,12 @@ async def view_personal_plans_command_click(update: Update, context: CallbackCon
             "Use ➕ *Add Custom Plan* to create one."
         )
     else:
+        tz_data = await get_user_timezone(user_id)
         rows = []
         for idx, (plan_id, interval, next_iso) in enumerate(plans, 1):
-            next_dt = datetime.fromisoformat(next_iso)
-            formatted_time = next_dt.strftime("%H:%M %d.%m.%y")
+            first_dt_utc = datetime.fromisoformat(next_iso)
+            first_dt_local = convert_utc_to_local(first_dt_utc, tz_data)
+            formatted_time = first_dt_local.strftime("%H:%M %d.%m.%y")
             rows.append(f"{idx}. ⏱ Every {interval} min, start: {formatted_time}")
 
         message = "📋 *Your Personal BTC Plans:*\n\n" + "\n".join(rows)
@@ -69,17 +73,36 @@ async def add_personal_start(update: Update, context: CallbackContext) -> int:
         return ConversationHandler.END
 
     context.user_data["tier"] = tier
+    buttons = [
+        [InlineKeyboardButton("❌ Cancel", callback_data="cancel_add_process_personal_p")]
+    ]
+    # ⚠️ Warn if no timezone configured
+    tz_data = await get_user_timezone(user_id)
+    warning = ""
+    if tz_data["method"] is None:
+        warning = (
+                    "⚠️ *Heads up!* You haven’t set your timezone yet.\n"
+                    "Notifications may fire at the wrong local time.\n\n"
+        )
+        buttons.insert(0,
+            [InlineKeyboardButton("🌍 Time Settings", callback_data="open_time_settings_menu_wrapper")]
+        )
+    reply_markup = InlineKeyboardMarkup(buttons)
     await send_or_edit(update,
+            warning +
             "🕒 *Enter your desired interval in minutes (e.g. 15):*\n"
             f"📌 Free tier: ≥{FREE_TIER.interval} min, {FREE_TIER.amount} plan\n"
             f"📌 Pro tier: ≥{PRO_TIER.interval} min, up to {PRO_TIER.amount} plans\n"
             f"📌 Ultra tier: ≥{ULTRA_TIER.interval} min, up to {ULTRA_TIER.amount} plans",
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-               [InlineKeyboardButton("❌ Cancel", callback_data="cancel_add_process_personal_p")]
-            ])
+            reply_markup=reply_markup
     )
     return GET_INTERVAL
+
+
+async def open_time_settings_menu_wrapper(update: Update, context: CallbackContext) -> int:
+    await open_time_settings_menu(update, context)
+    return ConversationHandler.END
 
 
 async def add_personal_interval(update: Update, context: CallbackContext) -> int:
@@ -139,10 +162,16 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
         )
         return GET_START_TIME
 
-    first_fire = datetime.utcnow().replace(hour=hour, minute=minute, second=0, microsecond=0)
-    if first_fire <= datetime.utcnow():  # time already passed today
-        first_fire += timedelta(days=1)
+    # 🔄 Load user tz & compute first_fire in UTC
+    tz_data = await get_user_timezone(user_id)
+    utc_now = datetime.utcnow()
+    local_now = convert_utc_to_local(utc_now, tz_data)
+    first_local = local_now.replace(hour=hour, minute=minute,
+                                    second=0, microsecond=0)
+    if first_local <= local_now:  # already passed today → tomorrow
+        first_local += timedelta(days=1)
 
+    first_fire = convert_local_to_utc(first_local, tz_data)
     await add_personal_plan(user_id, interval, first_fire.isoformat(" "))
 
     await send_or_edit(update,

@@ -3,7 +3,6 @@ from telegram.ext import CallbackContext
 
 from keyboard import build_main_keyboard
 from util import send_or_edit
-from handlers.price import get_price_command_click
 
 # Handle /start command
 async def start_command(update: Update, context: CallbackContext) -> None:

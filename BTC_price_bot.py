@@ -13,7 +13,7 @@ from handlers.currency import set_currency_command_click
 from handlers.base_plan import subscribe_base_command_click, unsubscribe_base_command_click
 from handlers.personal_plan import (view_personal_plans_command_click, add_personal_start, add_personal_interval,
                                     add_personal_start_time, cancel_add_process_personal_p, open_cancel_personal_menu,
-                                    cancel_personal_plan)
+                                    cancel_personal_plan, open_time_settings_menu_wrapper)
 from handlers.core import start_command, help_command
 from button_router import button_click_handler
 from scheduler import notify_subscribers
@@ -57,6 +57,7 @@ async def main():
             GET_INTERVAL: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_interval),
                 CallbackQueryHandler(cancel_add_process_personal_p, pattern= "^cancel_add_process_personal_p$"),
+                CallbackQueryHandler(open_time_settings_menu_wrapper, pattern= "^open_time_settings_menu_wrapper$"),
             ],
             GET_START_TIME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_start_time),
