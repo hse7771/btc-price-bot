@@ -53,6 +53,9 @@ async def init_db():
                 CREATE TABLE IF NOT EXISTS user_settings (
                     user_id INTEGER PRIMARY KEY,
                     tier INTEGER DEFAULT 0,
+                    timezone TEXT NULL,
+                    offset_minutes INTEGER NOT NULL DEFAULT 0,
+                    tz_method TEXT NULL,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -197,3 +200,32 @@ REMOVE_PERSONAL_SUB = """DELETE FROM personal_subscribers WHERE id = ?"""
 async def delete_personal_plan(plan_id: int):
     db = await get_db()
     await execute_write(db, REMOVE_PERSONAL_SUB, (plan_id, ))
+
+
+SET_USER_TZ = """
+INSERT INTO user_settings (user_id, timezone, offset_minutes, tz_method)
+VALUES (?, ?, ?, ?)
+ON CONFLICT(user_id) DO UPDATE SET
+    timezone       = excluded.timezone,
+    offset_minutes = excluded.offset_minutes,
+    tz_method      = excluded.tz_method,
+    updated_at     = CURRENT_TIMESTAMP
+"""
+
+async def set_user_timezone(user_id: int, timezone: str | None, offset_minutes: int, method: str):
+    db = await get_db()
+    await execute_write(db, SET_USER_TZ,(user_id, timezone, offset_minutes, method))
+
+
+GET_USER_TZ = """
+SELECT timezone, offset_minutes, tz_method FROM user_settings WHERE user_id = ?
+"""
+
+async def get_user_timezone(user_id: int) -> dict | None:
+    db = await get_db()
+    tz_data = {"timezone": None, "offset_minutes": 0, "method": None}
+    async with db.execute(GET_USER_TZ, (user_id,)) as cursor:
+        row = await cursor.fetchone()
+        if row:
+            tz_data["timezone"], tz_data["offset_minutes"], tz_data["method"] = row[0], row[1], row[2]
+        return tz_data
