@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -80,6 +81,17 @@ async def format_price_message(price_data: dict, user_id: int) -> str:
     now = datetime.now().strftime("%H:%M:%S")
     message += f"\n🕒 Last updated at: `{now}`"
     return message
+
+
+async def safe_delete_message(bot: Bot, chat_id: int, msg_id: int, delay: float=0):
+    """
+    Tries to delete a message silently. Fails silently if message is already gone or not deletable.
+    """
+    try:
+        await asyncio.sleep(delay)
+        await bot.delete_message(chat_id, msg_id)
+    except Exception as e:
+        logging.debug(f"Delete failed for message {msg_id} in chat {chat_id}: {e}")
 
 
 def validate_time_hhmm(text: str) -> tuple[int, int] | None:
