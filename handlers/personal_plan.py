@@ -1,15 +1,18 @@
 from datetime import datetime, timedelta
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackContext, ConversationHandler
+from telegram.ext import CallbackContext, ConversationHandler, CallbackQueryHandler, CommandHandler, MessageHandler, \
+    filters
 
 from db.db import get_personal_plans, get_user_tier, count_personal_plans, add_personal_plan, delete_personal_plan, \
     get_user_timezone
-from config import TIER_LIMITS, GET_INTERVAL, GET_START_TIME, FREE_TIER, PRO_TIER, ULTRA_TIER, TierConvertFromNumber
+from config import TIER_LIMITS, FREE_TIER, PRO_TIER, ULTRA_TIER, TierConvertFromNumber
 from handlers.timezone import open_time_settings_menu
-from util import send_or_edit, convert_utc_to_local, convert_local_to_utc
+from util import send_or_edit, convert_utc_to_local, convert_local_to_utc, validate_time_hhmm
 from keyboard import build_personal_sub_keyboard
 
+
+GET_INTERVAL, GET_START_TIME = range(2)
 
 async def open_personal_sub_menu(update: Update, context: CallbackContext) -> None:
     reply_markup = build_personal_sub_keyboard()
@@ -151,16 +154,17 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
     ])
 
     # Validate time format
-    try:
-        hour, minute = map(int, text.split(":"))
-        assert 0 <= hour < 24 and 0 <= minute < 60
-    except (ValueError, AssertionError):
+    validated_time = validate_time_hhmm(text)
+    if validated_time is None:
         await send_or_edit(update,
-               "❌ Invalid time format. Please use *HH:MM* (e.g. *14:30*).",
-                       parse_mode="Markdown",
-                       reply_markup=reply_markup_cancel
-        )
+                           "❌ Invalid time format. Please use *HH:MM* (e.g. *14:30*).",
+                           parse_mode="Markdown",
+                           reply_markup=reply_markup_cancel
+                           )
         return GET_START_TIME
+    else:
+        hour, minute = validated_time
+
 
     # 🔄 Load user tz & compute first_fire in UTC
     tz_data = await get_user_timezone(user_id)
@@ -176,8 +180,9 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
 
     await send_or_edit(update,
         f"✅ Custom plan saved:\n"
-        f"Every {interval} min, start: {hour:02}:{minute:02}.",
-                       reply_markup=build_personal_sub_keyboard()
+        f"Every *{interval}* min, start: *{hour:02}:{minute:02}*.",
+                       reply_markup=build_personal_sub_keyboard(),
+                       parse_mode="Markdown"
     )
     return ConversationHandler.END
 
@@ -197,7 +202,7 @@ async def open_cancel_personal_menu(update: Update, context: CallbackContext):
         await open_personal_sub_menu(update, context)
         return
 
-    message = "*🗑️ Select a plan to cancel:*"
+    message = "🗑️ Select a plan to cancel:"
     buttons = []
 
     for plan_id, interval, first_fire_time in plans:
@@ -223,3 +228,21 @@ async def cancel_personal_plan(update: Update, context: CallbackContext):
 
     await send_or_edit(update, "✅ Plan cancelled.")
     await open_personal_sub_menu(update, context)
+
+
+add_personal_conversation_handler = ConversationHandler(
+        entry_points=[CallbackQueryHandler(add_personal_start, pattern="^add_personal$"),
+                      CommandHandler("add_personal", add_personal_start)],
+        states={
+            GET_INTERVAL: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_interval),
+                CallbackQueryHandler(cancel_add_process_personal_p, pattern= "^cancel_add_process_personal_p$"),
+                CallbackQueryHandler(open_time_settings_menu_wrapper, pattern= "^open_time_settings_menu_wrapper$"),
+            ],
+            GET_START_TIME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_start_time),
+                CallbackQueryHandler(cancel_add_process_personal_p, pattern= "^cancel_add_process_personal_p$"),
+            ],
+        },
+        fallbacks=[],
+    )

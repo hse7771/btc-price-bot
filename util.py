@@ -78,6 +78,16 @@ async def format_price_message(price_data: dict, user_id: int) -> str:
     return message
 
 
+def validate_time_hhmm(text: str) -> tuple[int, int] | None:
+    """Parses HH:MM time string. Returns (hour, minute) or None if invalid."""
+    try:
+        hour, minute = map(int, text.strip().split(":"))
+        assert 0 <= hour < 24 and 0 <= minute < 60
+        return hour, minute
+    except (ValueError, AssertionError):
+        return None
+
+
 def convert_local_to_utc(local_dt: datetime, tz_data: Dict) -> datetime:
     """
     Convert *naive* local_dt (user clock) → *naive* UTC datetime
