@@ -6,7 +6,7 @@ from telegram.ext import CallbackContext, ConversationHandler, CallbackQueryHand
 from timezonefinder import TimezoneFinder
 from datetime import datetime, timedelta
 
-from db.db import set_user_timezone
+from db.db import set_user_timezone, get_user_timezone
 from keyboard import build_time_settings_keyboard
 from util import send_or_edit, validate_time_hhmm, safe_delete_message
 
@@ -26,7 +26,35 @@ async def open_time_settings_menu(update: Update, context: CallbackContext) -> N
     await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
-async def request_location(update: Update, context: CallbackContext):
+async def view_time_settings(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+
+    # You need to implement this DB function if it doesn't exist yet
+    tz_info = await get_user_timezone(user_id)  # returns (tz_name or None, offset, method) or None
+
+    if not tz_info["method"]:
+        message = "❌ You haven’t set your timezone yet."
+    else:
+        tz, offset, method = tz_info["timezone"], tz_info["offset_minutes"], tz_info["method"]
+        hours = offset // 60
+        mins = abs(offset) % 60
+        sign = "+" if offset >= 0 else "-"
+        method_display = "shared location 🌍" if method == "location" else "manual input ⌨️"
+
+        message = (
+            f"🕒 *Current Time Settings:*\n\n"
+            f"• Method: {method_display}\n"
+            f"• Timezone: `{tz or 'N/A'}`\n"
+            f"• Offset: UTC{sign}{abs(hours):02}:{mins:02}"
+        )
+
+    reply_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⬅️ Back", callback_data="open_time_settings_menu")]
+    ])
+    await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
+
+
+async def request_location(update: Update, context: CallbackContext) -> int:
     keyboard = [
         [KeyboardButton("📍 Share My Location", request_location=True)],
         [KeyboardButton("❌ Cancel")]

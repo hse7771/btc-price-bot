@@ -68,6 +68,7 @@ def build_personal_sub_keyboard() -> InlineKeyboardMarkup:
 
 def build_time_settings_keyboard() -> InlineKeyboardMarkup:
     keyboard = [
+        [InlineKeyboardButton("👁 View Current Time Settings", callback_data="view_time_settings")],
         [InlineKeyboardButton("📍 Share Location", callback_data="set_timezone_location")],
         [InlineKeyboardButton("⌨️ Enter Local Time", callback_data="set_timezone_manual")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
