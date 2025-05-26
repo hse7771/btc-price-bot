@@ -1,12 +1,12 @@
 import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from typing import Dict
+from typing import Dict, Optional
 from collections import defaultdict
 
 import aiohttp
 from aiolimiter import AsyncLimiter
-from telegram import Update, InlineKeyboardMarkup
+from telegram import Bot, Message, Update, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 
 from config import CURRENCIES
 from db.db import load_user_currencies
@@ -17,22 +17,26 @@ USER_LIMIT = defaultdict(lambda: AsyncLimiter(1, 1))
 USER_BURST = defaultdict(lambda: AsyncLimiter(30, 60))
 
 
-async def send_or_edit(update: Update, msg: str | None = None, reply_markup: InlineKeyboardMarkup = None, parse_mode: str = None):
+async def send_or_edit(update: Update, msg: str | None = None,
+                       reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove = None,
+                       parse_mode: str = None) -> Optional[Message]:
     """
     Handles sending or editing a message depending on whether it was triggered by a button click or a command.
     """
     uid = update.effective_user.id
     async with USER_LIMIT[uid], USER_BURST[uid]:
-        if update.callback_query:
-            # message editing
+        is_reply_markup = isinstance(reply_markup, (ReplyKeyboardMarkup, ReplyKeyboardRemove))
+
+        if update.callback_query and not is_reply_markup:
+            # Edit message from a button press
             if msg:
                 await update.callback_query.edit_message_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
-            # keyboard editing
             else:
                 await update.callback_query.edit_message_reply_markup(reply_markup=reply_markup)
-        # new message sending
+            return update.callback_query.message
         else:
-            await update.message.reply_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
+            # Safe fallback — new message (works with ReplyKeyboardMarkup or text command)
+            return await update.effective_message.reply_text(msg, parse_mode=parse_mode, reply_markup=reply_markup)
 
 
 async def get_http_session() -> aiohttp.ClientSession:
