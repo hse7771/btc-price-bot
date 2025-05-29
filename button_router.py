@@ -10,7 +10,7 @@ from handlers.base_plan import (open_base_sub_menu_command_click, subscribe_base
 from handlers.personal_plan import open_personal_sub_menu, view_personal_plans_command_click, open_cancel_personal_menu
 from handlers.core import open_main_menu
 from handlers.timezone import open_time_settings_menu, view_time_settings
-from handlers.upgrade import open_upgrade_menu
+from handlers.upgrade import open_upgrade_menu, upgrade_to_pro, upgrade_to_ultra
 from util import send_or_edit
 
 
@@ -32,6 +32,8 @@ def initialize_button_handlers():
         "open_time_settings_menu": open_time_settings_menu,
         "view_time_settings": view_time_settings,
         "open_upgrade_menu": open_upgrade_menu,
+        "upgrade_pro": upgrade_to_pro,
+        "upgrade_ultra": upgrade_to_ultra,
     }
     # Dynamic handlers for currency toggles
     for currency in CURRENCIES:

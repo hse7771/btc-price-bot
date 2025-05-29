@@ -38,3 +38,27 @@ async def open_upgrade_menu(update: Update, context: CallbackContext) -> None:
     await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
+async def upgrade_to_pro(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    current_tier = await get_user_tier(user_id)
+
+    if current_tier == TierConvertFromNumber.PRO:
+        await send_or_edit(update, "✅ You are already on *Pro* tier.", parse_mode="Markdown")
+        await open_upgrade_menu(update, context)
+        return
+
+    # TODO: Proceed to send payment invoice (next step)
+    await send_or_edit(update, "💳 Payment flow for *Pro* tier coming soon...", parse_mode="Markdown")
+
+
+async def upgrade_to_ultra(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    current_tier = await get_user_tier(user_id)
+
+    if current_tier == TierConvertFromNumber.ULTRA:
+        await send_or_edit(update, "✅ You are already on *Ultra* tier.", parse_mode="Markdown")
+        await open_upgrade_menu(update, context)
+        return
+
+    # TODO: Proceed to send payment invoice (next step)
+    await send_or_edit(update, "💳 Payment flow for *Ultra* tier coming soon...", parse_mode="Markdown")
