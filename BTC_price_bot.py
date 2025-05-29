@@ -7,6 +7,7 @@ from telegram.ext import (Application, AIORateLimiter, CommandHandler, CallbackQ
 from config import TOKEN, FETCH_INTERVAL
 from db.db import init_db
 from handlers.timezone import timezone_conversation_handler, cancel_timezone_setup, open_time_settings_menu
+from handlers.upgrade import open_upgrade_menu
 from util import close_http_session
 from handlers.price import get_price_command_click, refresh_price_cache
 from handlers.currency import set_currency_command_click
@@ -44,16 +45,18 @@ async def main():
     app.add_handler(CommandHandler("base", open_base_sub_menu_command_click))
     app.add_handler(CommandHandler("personal", open_personal_sub_menu))
 
-    # app.add_handler(CommandHandler("upgrade", open))
+    app.add_handler(CommandHandler("upgrade", open_upgrade_menu))
     app.add_handler(CommandHandler("timezone", open_time_settings_menu))
     # app.add_handler(CommandHandler("language", open_language_change_menu))
 
     # app.add_handler(CommandHandler("donate", open_donate_menu))
 
     app.add_handler(add_personal_conversation_handler)
+    app.add_handler(CallbackQueryHandler(cancel_personal_plan, pattern=r"^cancel_personal_plan_\d+$"))
+
     app.add_handler(timezone_conversation_handler)
     app.add_handler(MessageHandler(filters.Regex("^❌ Cancel$"), cancel_timezone_setup))
-    app.add_handler(CallbackQueryHandler(cancel_personal_plan, pattern=r"^cancel_personal_plan_\d+$"))
+
 
     app.add_handler(CallbackQueryHandler(button_click_handler))
 

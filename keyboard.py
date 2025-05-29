@@ -60,7 +60,7 @@ def build_personal_sub_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("📋 View My Plans", callback_data="view_personal")],
         [InlineKeyboardButton("➕ Add Custom Plan", callback_data="add_personal")],
         [InlineKeyboardButton("❌ Cancel Plan", callback_data="open_cancel_personal_menu")],
-        [InlineKeyboardButton("💳 Upgrade", callback_data="upgrade")],
+        [InlineKeyboardButton("💳 Upgrade", callback_data="open_upgrade_menu")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -72,5 +72,14 @@ def build_time_settings_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("📍 Share Location", callback_data="set_timezone_location")],
         [InlineKeyboardButton("⌨️ Enter Local Time", callback_data="set_timezone_manual")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def build_upgrade_keyboard() -> InlineKeyboardMarkup:
+    keyboard = [
+        [InlineKeyboardButton("⚡ Upgrade to Pro", callback_data="upgrade_pro")],
+        [InlineKeyboardButton("🚀 Upgrade to Ultra", callback_data="upgrade_ultra")],
+        [InlineKeyboardButton("⬅️ Back", callback_data="open_personal_sub_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
