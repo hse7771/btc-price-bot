@@ -19,9 +19,13 @@ PREDEFINED_INTERVALS = [15, 30, 60, 240, 1440]  # In minutes
 FETCH_INTERVAL = 60   # seconds
 
 @dataclass(frozen=True)
-class TierLimit:
-    amount: int      # max personal plans
-    interval: int    # minimum interval (minutes)
+class Tier:
+    name: str
+    price: str | None  # Free tier has no price
+    mx_personal_plans: int
+    mn_interval: int
+    emoji: str
+
 
 
 class TierConvertFromNumber(IntEnum):
@@ -30,11 +34,11 @@ class TierConvertFromNumber(IntEnum):
     ULTRA = 2
 
 
-FREE_TIER = TierLimit(amount=1, interval=5)
-PRO_TIER = TierLimit(amount=3, interval=1)
-ULTRA_TIER = TierLimit(amount=5, interval=1)
+FREE_TIER = Tier(name="Free", price=None, mx_personal_plans=1, mn_interval=5, emoji="")
+PRO_TIER = Tier(name="Pro", price="$1.99 / month", mx_personal_plans=3, mn_interval=1, emoji="⚡")
+ULTRA_TIER = Tier(name="Ultra", price="$4.99 / month", mx_personal_plans=5, mn_interval=1, emoji="🚀")
 
-TIER_LIMITS: dict[TierConvertFromNumber, TierLimit] = {
+TIERS: dict[TierConvertFromNumber, Tier] = {
     TierConvertFromNumber.FREE: FREE_TIER,
     TierConvertFromNumber.PRO: PRO_TIER,
     TierConvertFromNumber.ULTRA: ULTRA_TIER,
