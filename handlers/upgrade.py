@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 from db.db import get_user_tier
-from keyboard import build_upgrade_keyboard
+from keyboard import build_upgrade_keyboard, build_payment_keyboard
 from util import send_or_edit
 from config import TIERS, TierConvertFromNumber
 
@@ -47,8 +47,14 @@ async def upgrade_to_pro(update: Update, context: CallbackContext) -> None:
         await open_upgrade_menu(update, context)
         return
 
-    # TODO: Proceed to send payment invoice (next step)
-    await send_or_edit(update, "💳 Payment flow for *Pro* tier coming soon...", parse_mode="Markdown")
+    # Proceed to send payment invoice (next step)
+    reply_markup = build_payment_keyboard()
+    await send_or_edit(
+        update,
+        "💳 Choose a payment method for *Pro* tier:",
+        parse_mode="Markdown",
+        reply_markup=reply_markup
+    )
 
 
 async def upgrade_to_ultra(update: Update, context: CallbackContext) -> None:
@@ -60,5 +66,11 @@ async def upgrade_to_ultra(update: Update, context: CallbackContext) -> None:
         await open_upgrade_menu(update, context)
         return
 
-    # TODO: Proceed to send payment invoice (next step)
-    await send_or_edit(update, "💳 Payment flow for *Ultra* tier coming soon...", parse_mode="Markdown")
+    # Proceed to send payment invoice (next step)
+    reply_markup = build_payment_keyboard()
+    await send_or_edit(
+        update,
+        "💳 Choose a payment method for *Ultra* tier:",
+        parse_mode="Markdown",
+        reply_markup=reply_markup
+    )

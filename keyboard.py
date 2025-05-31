@@ -83,3 +83,12 @@ def build_upgrade_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("⬅️ Back", callback_data="open_personal_sub_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
+
+
+def build_payment_keyboard() -> InlineKeyboardMarkup:
+    keyboard = [
+        [InlineKeyboardButton("🇷🇺 Pay with ЮMoney", callback_data="pay_pro_yoomoney")],
+        [InlineKeyboardButton("🌍 Pay with Smart Glocal", callback_data="pay_pro_stripe")],
+        [InlineKeyboardButton("⬅️ Back", callback_data="open_upgrade_menu")]
+    ]
+    return InlineKeyboardMarkup(keyboard)

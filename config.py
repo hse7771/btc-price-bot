@@ -10,6 +10,10 @@ load_dotenv()
 
 # Retrieve the bot token from environment variables
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+UKASSA_TEST_TOKEN = os.getenv("UKASSA_TEST_TOKEN")
+UKASSA_REAL_TOKEN = os.getenv("UKASSA_REAL_TOKEN")
+SMART_GLOCAL_TEST_TOKEN = os.getenv("SMARTGLOCAL_TEST_TOKEN")
+SMART_GLOCAL_REAL_TOKEN = os.getenv("SMARTGLOCAL_REAL_TOKEN")
 
 # List of currencies we will support
 CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "CNY"]
