@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from enum import IntEnum
+from locale import currency
 
 from dotenv import load_dotenv
 
@@ -23,14 +24,17 @@ PREDEFINED_INTERVALS = [15, 30, 60, 240, 1440]  # In minutes
 FETCH_INTERVAL = 60   # seconds
 
 @dataclass(frozen=True)
+class PriceInfo:
+    currency: str  # Symbol like "$"
+    amount: float
+
+@dataclass(frozen=True)
 class Tier:
     name: str
-    price: str | None  # Free tier has no price
+    price: dict[str, PriceInfo]  # Free tier has no price
     mx_personal_plans: int
     mn_interval: int
     emoji: str
-
-
 
 class TierConvertFromNumber(IntEnum):
     FREE  = 0
@@ -38,9 +42,36 @@ class TierConvertFromNumber(IntEnum):
     ULTRA = 2
 
 
-FREE_TIER = Tier(name="Free", price=None, mx_personal_plans=1, mn_interval=5, emoji="")
-PRO_TIER = Tier(name="Pro", price="$1.99 / month", mx_personal_plans=3, mn_interval=1, emoji="⚡")
-ULTRA_TIER = Tier(name="Ultra", price="$4.99 / month", mx_personal_plans=5, mn_interval=1, emoji="🚀")
+FREE_TIER = Tier(
+    name="Free",
+    price={
+        "RUB": PriceInfo(currency="₽", amount=0),
+        "USD": PriceInfo(currency="$", amount=0)
+    },
+    mx_personal_plans=1,
+    mn_interval=5,
+    emoji=""
+)
+
+PRO_TIER = Tier(
+    name="Pro",
+    price={
+        "RUB": PriceInfo(currency="₽", amount=150),
+        "USD": PriceInfo(currency="$", amount=1.99)
+    },
+    mx_personal_plans=3,
+    mn_interval=1,
+    emoji="⚡"
+)
+ULTRA_TIER = Tier(name="Ultra",
+                  price={
+                      "RUB": PriceInfo(currency="₽", amount=350),
+                      "USD": PriceInfo(currency="$", amount=4.99)
+                  },
+                  mx_personal_plans=5,
+                  mn_interval=1,
+                  emoji="🚀"
+                  )
 
 TIERS: dict[TierConvertFromNumber, Tier] = {
     TierConvertFromNumber.FREE: FREE_TIER,

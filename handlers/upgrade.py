@@ -3,8 +3,7 @@ from telegram.ext import CallbackContext
 from db.db import get_user_tier
 from keyboard import build_upgrade_keyboard, build_payment_keyboard
 from util import send_or_edit
-from config import TIERS, TierConvertFromNumber
-
+from config import TIERS, TierConvertFromNumber, UKASSA_TEST_TOKEN, SMART_GLOCAL_TEST_TOKEN
 
 
 async def open_upgrade_menu(update: Update, context: CallbackContext) -> None:
@@ -26,7 +25,7 @@ async def open_upgrade_menu(update: Update, context: CallbackContext) -> None:
             continue  # Skip showing current tier as an upgrade option
 
         message_lines.append(
-            f"{tier.emoji} *{tier.name} Tier* – {tier.price}\n"
+            f"{tier.emoji} *{tier.name} Tier* – {tier.price['USD'].currency}{tier.price['USD'].amount} / month\n"
             f"  • {tier.mx_personal_plans} personal plans\n"
             f"  • Min interval: {tier.mn_interval} min\n"
         )
