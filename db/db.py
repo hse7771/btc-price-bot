@@ -72,6 +72,20 @@ async def init_db():
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+
+    await db.execute('''
+                CREATE TABLE IF NOT EXISTS payments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    tier INTEGER NOT NULL,
+                    currency TEXT NOT NULL,
+                    amount INTEGER NOT NULL,  -- in cents/kopecks
+                    provider TEXT NOT NULL,
+                    telegram_payment_charge_id TEXT UNIQUE NOT NULL,
+                    provider_payment_charge_id TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
     await db.commit()
 
 
@@ -256,3 +270,17 @@ async def get_user_timezone(user_id: int) -> dict | None:
         if row:
             tz_data["timezone"], tz_data["offset_minutes"], tz_data["method"] = row[0], row[1], row[2]
         return tz_data
+
+
+RECORD_PAYMENT = """
+INSERT INTO payments (user_id, tier, currency, amount, provider, telegram_payment_charge_id, provider_payment_charge_id) 
+VALUES (?, ?, ?, ?, ?, ?, ?)
+"""
+async def record_payment(user_id: int, tier: TierConvertFromNumber,
+                        currency: str, amount: int, provider: str,
+                        telegram_charge_id: str, provider_charge_id: str) -> None:
+    db = await get_db()
+    await execute_write(db, RECORD_PAYMENT,
+                        (user_id, int(tier),
+                                    currency, amount, provider,
+                                    telegram_charge_id, provider_charge_id))
