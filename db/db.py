@@ -1,9 +1,9 @@
-from datetime import datetime
-
 import aiosqlite
 import asyncio
 import logging
 from pathlib import Path
+
+from config import TierConvertFromNumber
 
 
 DB_PATH = Path("db", "database files", "BTC_bot_data.db")
@@ -55,13 +55,21 @@ async def init_db():
             ''')
 
     await db.execute('''
-                CREATE TABLE IF NOT EXISTS user_settings (
+                CREATE TABLE IF NOT EXISTS user_time_settings (
                     user_id INTEGER PRIMARY KEY,
-                    tier INTEGER DEFAULT 0,
                     timezone TEXT NULL,
                     offset_minutes INTEGER NOT NULL DEFAULT 0,
                     tz_method TEXT NULL,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+    await db.execute('''
+                CREATE TABLE IF NOT EXISTS user_subscriptions (
+                    user_id INTEGER PRIMARY KEY,
+                    tier INTEGER DEFAULT 0,           
+                    subscription_end DATETIME,        -- if using expiring subscriptions
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
     await db.commit()
@@ -185,9 +193,23 @@ async def count_personal_plans(user_id: int) -> int:
 async def get_user_tier(user_id: int) -> int:
     db = await get_db()
 
-    async with db.execute("SELECT tier FROM user_settings WHERE user_id = ?", (user_id,)) as cursor:
+    async with db.execute("SELECT tier FROM user_subscriptions WHERE user_id = ?", (user_id,)) as cursor:
         row = await cursor.fetchone()
         return row[0] if row else 0
+
+
+UPDATE_TIER = """
+INSERT INTO user_subscriptions (user_id, tier, subscription_end, updated_at)
+VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+ON CONFLICT(user_id) DO UPDATE SET
+    tier             = excluded.tier,
+    subscription_end = excluded.subscription_end,
+    updated_at       = CURRENT_TIMESTAMP
+"""
+
+async def update_user_tier(user_id: int, new_tier: TierConvertFromNumber, expiry_date: str):
+    db = await get_db()
+    await execute_write(db, UPDATE_TIER,(user_id, new_tier, expiry_date,))
 
 
 async def get_all_personal() -> list[tuple[int, int, str]]:
@@ -208,7 +230,7 @@ async def delete_personal_plan(plan_id: int):
 
 
 SET_USER_TZ = """
-INSERT INTO user_settings (user_id, timezone, offset_minutes, tz_method)
+INSERT INTO user_time_settings (user_id, timezone, offset_minutes, tz_method)
 VALUES (?, ?, ?, ?)
 ON CONFLICT(user_id) DO UPDATE SET
     timezone       = excluded.timezone,
@@ -223,7 +245,7 @@ async def set_user_timezone(user_id: int, timezone: str | None, offset_minutes: 
 
 
 GET_USER_TZ = """
-SELECT timezone, offset_minutes, tz_method FROM user_settings WHERE user_id = ?
+SELECT timezone, offset_minutes, tz_method FROM user_time_settings WHERE user_id = ?
 """
 
 async def get_user_timezone(user_id: int) -> dict | None:
