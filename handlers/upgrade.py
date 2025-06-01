@@ -47,7 +47,7 @@ async def upgrade_to_pro(update: Update, context: CallbackContext) -> None:
         return
 
     # Proceed to send payment invoice (next step)
-    reply_markup = build_payment_keyboard()
+    reply_markup = build_payment_keyboard(tier_type="pro")
     await send_or_edit(
         update,
         "💳 Choose a payment method for *Pro* tier:",
@@ -66,7 +66,7 @@ async def upgrade_to_ultra(update: Update, context: CallbackContext) -> None:
         return
 
     # Proceed to send payment invoice (next step)
-    reply_markup = build_payment_keyboard()
+    reply_markup = build_payment_keyboard(tier_type="ultra")
     await send_or_edit(
         update,
         "💳 Choose a payment method for *Ultra* tier:",

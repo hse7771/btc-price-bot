@@ -85,10 +85,10 @@ def build_upgrade_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def build_payment_keyboard() -> InlineKeyboardMarkup:
+def build_payment_keyboard(tier_type: str) -> InlineKeyboardMarkup:
     keyboard = [
-        [InlineKeyboardButton("🇷🇺 Pay with ЮMoney", callback_data="pay_pro_yoomoney")],
-        [InlineKeyboardButton("🌍 Pay with Smart Glocal", callback_data="pay_pro_stripe")],
+        [InlineKeyboardButton("🇷🇺 Pay with ЮMoney", callback_data=f"pay_{tier_type}_yoomoney")],
+        [InlineKeyboardButton("🌍 Pay with Smart Glocal", callback_data=f"pay_{tier_type}_smart_glocal")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_upgrade_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)

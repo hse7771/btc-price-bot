@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
 
-from config import CURRENCIES, PREDEFINED_INTERVALS
+from config import CURRENCIES, PREDEFINED_INTERVALS, TIERS, TierConvertFromNumber, PROVIDERS
 from handlers.price import get_price_command_click, refresh_price_click
 from handlers.currency import (set_currency_command_click, toggle_currency, confirm_currency_selection,
                                clear_currency_selection)
@@ -10,7 +10,7 @@ from handlers.base_plan import (open_base_sub_menu_command_click, subscribe_base
 from handlers.personal_plan import open_personal_sub_menu, view_personal_plans_command_click, open_cancel_personal_menu
 from handlers.core import open_main_menu
 from handlers.timezone import open_time_settings_menu, view_time_settings
-from handlers.upgrade import open_upgrade_menu, upgrade_to_pro, upgrade_to_ultra
+from handlers.upgrade import open_upgrade_menu, upgrade_to_pro, upgrade_to_ultra, send_invoice
 from util import send_or_edit
 
 
@@ -42,7 +42,12 @@ def initialize_button_handlers():
     for interval in PREDEFINED_INTERVALS:
         handlers[f"base_{interval}"] = lambda u, c, i=interval: confirm_base_sub(u, c, i)
         handlers[f"unbase_{interval}"] = lambda u, c, i=interval: confirm_unbase_sub(u, c, i)
-
+    # Dynamic handlers for different providers and tiers
+    for tier in TierConvertFromNumber:
+        for provider, currency in PROVIDERS.items():
+            key = f"pay_{tier.name.lower()}_{provider}"
+            handlers[key] = lambda u, c, t=tier, p=provider, cur=currency: (
+                send_invoice(u, c, tier_type=t, provider=p, currency=cur))
     return handlers
 
 

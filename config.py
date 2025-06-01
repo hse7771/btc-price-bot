@@ -1,7 +1,6 @@
 import os
 from dataclasses import dataclass
 from enum import IntEnum
-from locale import currency
 
 from dotenv import load_dotenv
 
@@ -77,4 +76,9 @@ TIERS: dict[TierConvertFromNumber, Tier] = {
     TierConvertFromNumber.FREE: FREE_TIER,
     TierConvertFromNumber.PRO: PRO_TIER,
     TierConvertFromNumber.ULTRA: ULTRA_TIER,
+}
+
+PROVIDERS = {
+    "yoomoney": "RUB",
+    "smart_glocal": "USD"
 }
