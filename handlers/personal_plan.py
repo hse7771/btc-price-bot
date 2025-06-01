@@ -70,7 +70,7 @@ async def add_personal_start(update: Update, context: CallbackContext) -> int:
                            f"❌ You’ve reached your plan limit ({max_plans}).\n"
                            f"Upgrade your tier to add more.",
                            reply_markup=InlineKeyboardMarkup([
-                                            [InlineKeyboardButton("💳 Upgrade", callback_data="upgrade")],
+                                            [InlineKeyboardButton("💳 Upgrade", callback_data="open_upgrade_menu")],
                                             [InlineKeyboardButton("⬅️ Back", callback_data="open_personal_sub_menu")]
                            ])
                            )
