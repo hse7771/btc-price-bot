@@ -86,6 +86,14 @@ async def init_db():
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+
+    await db.execute('''
+        CREATE TABLE IF NOT EXISTS invoices (
+            message_id INTEGER PRIMARY KEY,
+            chat_id INTEGER NOT NULL,
+            created_at INTEGER NOT NULL
+        )
+    ''')
     await db.commit()
 
 
@@ -284,3 +292,29 @@ async def record_payment(user_id: int, tier: TierConvertFromNumber,
                         (user_id, int(tier),
                                     currency, amount, provider,
                                     telegram_charge_id, provider_charge_id))
+
+
+RECORD_INVOICE = """
+INSERT INTO invoices (message_id, chat_id, created_at)
+VALUES (?, ?, ?)
+"""
+
+async def record_invoice(message_id: int, chat_id: int, created_at: int):
+    db = await get_db()
+    await execute_write(db, RECORD_INVOICE, (message_id, chat_id, created_at))
+
+
+GET_EXPIRED = "SELECT message_id, chat_id FROM invoices WHERE created_at < ?"
+
+async def get_expired_invoice_messages(cutoff: int) -> list[tuple[int, int]]:
+    db = await get_db()
+
+    async with db.execute(GET_EXPIRED, (cutoff,)) as cursor:
+        return await cursor.fetchall()
+
+
+DELETE_INVOICE = "DELETE FROM invoices WHERE message_id = ?"
+
+async def remove_invoice_from_db(message_id: int):
+    db = await get_db()
+    await execute_write(db, DELETE_INVOICE, (message_id,))
