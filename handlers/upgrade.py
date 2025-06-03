@@ -24,17 +24,20 @@ async def open_upgrade_menu(update: Update, context: CallbackContext) -> None:
         f"You're currently on: *{tier.name} Tier*\n",
         "Here are the available upgrades:\n"
     ]
-
+    tier_suggestion_lines = []
     for tier_key in (TierConvertFromNumber.PRO, TierConvertFromNumber.ULTRA):
         tier = TIERS[tier_key]
-        if tier_key == TierConvertFromNumber(tier_name):
+        if tier_key <= TierConvertFromNumber(tier_name):
             continue  # Skip showing current tier as an upgrade option
 
-        message_lines.append(
+        tier_suggestion_lines.append(
             f"{tier.emoji} *{tier.name} Tier* – {tier.price['USD'].currency}{tier.price['USD'].amount} / month\n"
             f"  • {tier.mx_personal_plans} personal plans\n"
             f"  • Min interval: {tier.mn_interval} min\n"
         )
+    if not tier_suggestion_lines:
+        tier_suggestion_lines.append("\n*🚀 You’re already on the highest tier. Thank you! 🙏*\n\n")
+    message_lines.extend(tier_suggestion_lines)
     message_lines.append("⏳ Subscriptions are *manual* and expire after 30 days.\nYou can renew at any time.")
 
     message = "\n".join(message_lines)
@@ -47,8 +50,10 @@ async def upgrade_to_pro(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     current_tier = await get_user_tier(user_id)
 
-    if current_tier == TierConvertFromNumber.PRO:
-        await send_or_edit(update, "✅ You are already on *Pro* tier.", parse_mode="Markdown")
+    if current_tier == TierConvertFromNumber.PRO or current_tier == TierConvertFromNumber.ULTRA:
+        await send_or_edit(update,
+                           f"✅ You are already on *{TIERS[TierConvertFromNumber(current_tier)].name}* tier.",
+                           parse_mode="Markdown")
         await open_upgrade_menu(update, context)
         return
 
