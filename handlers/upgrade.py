@@ -1,12 +1,13 @@
 from time import time
+from urllib.parse import parse_qs
 
 from telegram import Update, LabeledPrice
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, ContextTypes
 
 from db.db import get_user_tier, remove_invoice_from_db, record_invoice, get_expired_invoice_messages
 from keyboard import build_upgrade_keyboard, build_payment_keyboard
 from util import send_or_edit, safe_delete_message
-from config import TIERS, TierConvertFromNumber, UKASSA_TEST_TOKEN, SMART_GLOCAL_TEST_TOKEN
+from config import TIERS, TierConvertFromNumber, UKASSA_TEST_TOKEN, SMART_GLOCAL_TEST_TOKEN, TIER_NAMES, PROVIDERS
 
 EXPIRY_SECONDS = 300
 
@@ -123,3 +124,46 @@ async def cleanup_expired_invoices(context: CallbackContext) -> None:
     for message_id, chat_id in expired:
         await safe_delete_message(context.bot, chat_id, message_id)
         await remove_invoice_from_db(message_id)
+
+
+async def handle_precheckout_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.pre_checkout_query
+
+    parsed = parse_payload(query.invoice_payload)
+    if not parsed:
+        await query.answer(ok=False, error_message="❌ Invalid payment payload.")
+        return
+
+    tier = parsed["tier"]
+    provider = parsed["provider"]
+    if tier not in TIER_NAMES or provider not in PROVIDERS.keys():
+        await query.answer(ok=False, error_message="Invalid plan or payment provider.")
+        return
+    user_id = parsed["user_id"]
+    ts = parsed["ts"]
+
+    # Expired invoice
+    if time() - ts > EXPIRY_SECONDS:
+        await query.answer(ok=False, error_message="This payment link has expired.")
+        return
+
+    # Attempted misuse from another user
+    if user_id != query.from_user.id:
+        await query.answer(ok=False, error_message="This invoice was not issued for you.")
+        return
+
+    # ✅ All checks passed
+    await query.answer(ok=True)
+
+
+def parse_payload(payload: str) -> dict[str, str | int] | None:
+    try:
+        parts = parse_qs(payload)
+        return {
+            "tier": parts["tier"][0],
+            "provider": parts["provider"][0],
+            "user_id": int(parts["user"][0]),
+            "ts": int(parts["timestamp"][0]),
+        }
+    except (KeyError, ValueError, IndexError):
+        return None

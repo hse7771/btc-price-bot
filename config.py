@@ -82,3 +82,5 @@ PROVIDERS = {
     "yoomoney": "RUB",
     "smart_glocal": "USD"
 }
+
+TIER_NAMES = {"pro", "ultra"}
