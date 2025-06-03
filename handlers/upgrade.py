@@ -1,16 +1,19 @@
+from datetime import datetime, timedelta
 from time import time
 from urllib.parse import parse_qs
 
 from telegram import Update, LabeledPrice
 from telegram.ext import CallbackContext, ContextTypes
 
-from db.db import get_user_tier, remove_invoice_from_db, record_invoice, get_expired_invoice_messages
+from db.db import get_user_tier, remove_invoice_from_db, record_invoice, get_expired_invoice_messages, record_payment, \
+    update_user_tier
+from handlers.personal_plan import open_personal_sub_menu
 from keyboard import build_upgrade_keyboard, build_payment_keyboard
 from util import send_or_edit, safe_delete_message
 from config import TIERS, TierConvertFromNumber, UKASSA_TEST_TOKEN, SMART_GLOCAL_TEST_TOKEN, TIER_NAMES, PROVIDERS
 
 EXPIRY_SECONDS = 300
-
+SUB_DURATION_DAYS = 30
 
 async def open_upgrade_menu(update: Update, context: CallbackContext) -> None:
     """Displays the upgrade menu with available tiers and user’s current status."""
@@ -59,12 +62,13 @@ async def upgrade_to_pro(update: Update, context: CallbackContext) -> None:
 
     # Proceed to send payment invoice (next step)
     reply_markup = build_payment_keyboard(tier_type="pro")
-    await send_or_edit(
+    msg = await send_or_edit(
         update,
         "💳 Choose a payment method for *Pro* tier:",
         parse_mode="Markdown",
         reply_markup=reply_markup
     )
+    context.chat_data["previous_upgrade_menu_msg_id"] = msg.message_id
 
 
 async def upgrade_to_ultra(update: Update, context: CallbackContext) -> None:
@@ -78,12 +82,13 @@ async def upgrade_to_ultra(update: Update, context: CallbackContext) -> None:
 
     # Proceed to send payment invoice (next step)
     reply_markup = build_payment_keyboard(tier_type="ultra")
-    await send_or_edit(
+    msg = await send_or_edit(
         update,
         "💳 Choose a payment method for *Ultra* tier:",
         parse_mode="Markdown",
         reply_markup=reply_markup
     )
+    context.chat_data["previous_upgrade_menu_msg_id"] = msg.message_id
 
 
 async def send_invoice(update: Update, context: CallbackContext, tier_type: TierConvertFromNumber, provider: str,
@@ -112,6 +117,7 @@ async def send_invoice(update: Update, context: CallbackContext, tier_type: Tier
         start_parameter=start_parameter,
         need_name=True,
     )
+    context.chat_data["invoice_msg_id"] = msg.message_id
 
     await record_invoice(message_id=msg.message_id, chat_id=msg.chat.id, created_at=int(time()))
     context.job_queue.run_once(delete_invoice_msg_record, when=EXPIRY_SECONDS,
@@ -172,3 +178,50 @@ def parse_payload(payload: str) -> dict[str, str | int] | None:
         }
     except (KeyError, ValueError, IndexError):
         return None
+
+
+async def handle_successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    payment = update.message.successful_payment
+    parsed = parse_payload(payment.invoice_payload)
+
+    if not parsed:
+        await send_or_edit(update,
+                           "⚠️ Payment was processed, but the data was invalid. Please contact support.")
+        return
+
+    tier_name = parsed["tier"]
+    provider = parsed["provider"]
+    user_id = parsed["user_id"]
+    msg_id = context.chat_data.get("invoice_msg_id")  # Optional, fallback if needed
+
+    # 1. Cancel the scheduled auto-delete job
+    if msg_id:
+        for job in context.job_queue.get_jobs_by_name(f"del_{msg_id}"):
+            job.schedule_removal()
+        await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id, msg_id=msg_id)
+        await remove_invoice_from_db(msg_id)
+
+    new_tier = TierConvertFromNumber[tier_name.upper()]
+    # 2. Log the payment
+    await record_payment(
+        user_id=user_id,
+        tier=new_tier,
+        currency=payment.currency,
+        amount=payment.total_amount,
+        provider=provider,
+        telegram_charge_id=payment.telegram_payment_charge_id,
+        provider_charge_id=payment.provider_payment_charge_id,
+    )
+
+    # 3. Upgrade the user tier
+    expiry_dt = datetime.utcnow() + timedelta(days=SUB_DURATION_DAYS)
+    expiry_iso = expiry_dt.strftime("%Y-%m-%d %H:%M:%S")
+    await update_user_tier(user_id, new_tier, expiry_iso)
+
+    # 4. Confirm to user
+    msg = await send_or_edit(update,
+                       "✅ Payment successful! Your subscription has been activated.")
+    await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id, msg_id=msg.message_id, delay=5)
+    await open_personal_sub_menu(update, context)
+    await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id,
+                              msg_id=context.chat_data["previous_upgrade_menu_msg_id"])

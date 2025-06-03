@@ -8,7 +8,8 @@ from telegram.ext import (Application, AIORateLimiter, CommandHandler, CallbackQ
 from config import TOKEN, FETCH_INTERVAL
 from db.db import init_db
 from handlers.timezone import timezone_conversation_handler, cancel_timezone_setup, open_time_settings_menu
-from handlers.upgrade import open_upgrade_menu, cleanup_expired_invoices, handle_precheckout_query
+from handlers.upgrade import open_upgrade_menu, cleanup_expired_invoices, handle_precheckout_query, \
+    handle_successful_payment
 from util import close_http_session
 from handlers.price import get_price_command_click, refresh_price_cache
 from handlers.currency import set_currency_command_click
@@ -60,6 +61,7 @@ async def main():
     app.add_handler(MessageHandler(filters.Regex("^❌ Cancel$"), cancel_timezone_setup))
 
     app.add_handler(PreCheckoutQueryHandler(handle_precheckout_query))
+    app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, handle_successful_payment))
 
     app.add_handler(CallbackQueryHandler(button_click_handler))
 
