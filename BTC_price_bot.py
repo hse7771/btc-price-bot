@@ -7,7 +7,7 @@ from telegram.ext import (Application, AIORateLimiter, CommandHandler, CallbackQ
 from config import TOKEN, FETCH_INTERVAL
 from db.db import init_db
 from handlers.timezone import timezone_conversation_handler, cancel_timezone_setup, open_time_settings_menu
-from handlers.upgrade import open_upgrade_menu
+from handlers.upgrade import open_upgrade_menu, cleanup_expired_invoices
 from util import close_http_session
 from handlers.price import get_price_command_click, refresh_price_cache
 from handlers.currency import set_currency_command_click
@@ -35,6 +35,7 @@ async def main():
         ))
         .build()
     )
+    app.job_queue.run_once(cleanup_expired_invoices, when=0)
 
     # Register command handlers
     app.add_handler(CommandHandler("start", start_command))
@@ -61,7 +62,7 @@ async def main():
     app.add_handler(CallbackQueryHandler(button_click_handler))
 
     # Start polling for messages
-    print("🚀 Bot is running... Press Ctrl+C to stop.")
+    logging.info("🚀 Bot is running... Press Ctrl+C to stop.")
     async with app:
         await app.start()
         await app.updater.start_polling()
