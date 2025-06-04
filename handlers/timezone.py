@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from db.db import set_user_timezone, get_user_timezone
 from keyboard import build_time_settings_keyboard
-from util import send_or_edit, validate_time_hhmm, safe_delete_message
+from util import send_or_edit, validate_time_hhmm, safe_delete_message, format_utc_offset
 
 SETUP_METHOD, SET_MANUAL_TIME, SET_TZ_LOCATION = range(3)
 
@@ -36,16 +36,14 @@ async def view_time_settings(update: Update, context: CallbackContext) -> None:
         message = "❌ You haven’t set your timezone yet."
     else:
         tz, offset, method = tz_info["timezone"], tz_info["offset_minutes"], tz_info["method"]
-        hours = offset // 60
-        mins = abs(offset) % 60
-        sign = "+" if offset >= 0 else "-"
         method_display = "shared location 🌍" if method == "location" else "manual input ⌨️"
+        offset_caption = format_utc_offset(offset)
 
         message = (
             f"🕒 *Current Time Settings:*\n\n"
             f"• Method: {method_display}\n"
             f"• Timezone: `{tz or 'N/A'}`\n"
-            f"• Offset: UTC{sign}{abs(hours):02}:{mins:02}"
+            f"• Offset: {offset_caption}"
         )
 
     reply_markup = InlineKeyboardMarkup([
@@ -148,10 +146,10 @@ async def process_manual_time(update: Update, context: CallbackContext) -> int:
 
     seconds = (local_candidate - now_utc).total_seconds()
     offset_minutes = calculate_offset(seconds)
-
     await set_user_timezone(user_id, None, offset_minutes, "manual")
 
-    prev_msg: Message = await send_or_edit(update, f"✅ Offset set: UTC{offset_minutes:+} min.")
+    offset_caption = format_utc_offset(offset_minutes)
+    prev_msg: Message = await send_or_edit(update, f"✅ Offset set: {offset_caption}")
     await open_time_settings_menu(update, context)
     await safe_delete_message(bot, chat_id, prev_msg.message_id, 1.75)
     return ConversationHandler.END

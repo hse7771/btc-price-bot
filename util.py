@@ -130,3 +130,14 @@ def convert_utc_to_local(utc_dt: datetime, tz_data: Dict) -> datetime:
         return aware_utc.astimezone(zone).replace(tzinfo=None)
     else:
         return utc_dt + timedelta(minutes=offset)
+
+
+def format_utc_offset(offset_minutes: int) -> str:
+    """
+    Return a string like  'UTC-05:00'  or  'UTC+05:30'
+    for the signed integer offset (minutes).
+    """
+    sign = "+" if offset_minutes >= 0 else "-"
+    abs_min   = abs(offset_minutes)
+    hours, mm = divmod(abs_min, 60)
+    return f"UTC{sign}{hours:02}:{mm:02}"
