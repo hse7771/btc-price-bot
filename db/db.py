@@ -3,8 +3,13 @@ from datetime import datetime
 import aiosqlite
 import asyncio
 import logging
+from pathlib import Path
 
-DB_NAME = "db/database files/BTC_bot_data.db"
+
+DB_PATH = Path("db", "database files", "BTC_bot_data.db")
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)    # auto-create folders
+DB_NAME = str(DB_PATH)
+
 MAX_RETRIES        = 2          # 1 original try + 1 retry
 LOCK_RETRY_DELAY   = 0.05       # seconds (50ms)
 
