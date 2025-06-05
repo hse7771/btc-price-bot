@@ -8,12 +8,14 @@ from util import send_or_edit
 async def start_command(update: Update, context: CallbackContext) -> None:
     """Handles the /start command and sends a welcome message with buttons."""
     welcome_message = (
-        "👋 *Hello! Welcome to the Bitcoin Price Bot.*\n\n"
-        "Here’s what I can do for you:\n"
+        "👋 *Welcome to the Bitcoin Price Bot!*\n\n"
+        "Here’s what I can help you with:\n"
         "🔹 Show real-time BTC prices\n"
-        "🔹 Let you choose preferred currencies\n"
-        "🔹 Send regular price updates\n\n"
-        "👇 Use the buttons below to get started:"
+        "🔹 Choose your preferred currencies\n"
+        "🔹 Get automatic price updates\n"
+        "   • Base Plan (UTC-based)\n"
+        "   • Personal Plan (local time)\n\n"
+        "👇 Use the buttons below to explore:"
     )
 
     reply_markup = build_main_keyboard()
@@ -23,24 +25,29 @@ async def start_command(update: Update, context: CallbackContext) -> None:
 async def help_command(update: Update, context: CallbackContext) -> None:
     await send_or_edit(update,
                                "<b>ℹ️ Bot Commands:</b>\n\n"
+                               
+                                    "<b>📌 Essentials:</b>\n"
                                     "/start – Start the bot and show main menu\n"
                                     "/help – Show this help message\n"
                                     "/price – Show the current Bitcoin price\n"
-                                    "/set_currency – Choose which currencies you want to see\n\n"
+                                    "/currency – Choose currencies you want to see\n\n"
                                 
-                                    "<b>📅 Base Plan Subscriptions:</b>\n"
-                                    "/subscribe_base – Subscribe to regular BTC updates (e.g. every 15, 30, 60 min)\n"
-                                    "/unsubscribe_base – Cancel your base plan subscriptions\n\n"
-                                
-                                    "<b>📆 Personal Plans:</b>\n"
-                                    "/add_personal – Add a custom BTC subscription\n"
-                                    "/view_personal – View your custom subscriptions\n"
-                                    "/cancel_personal – Remove a personal subscription\n\n"
+                                    "<b>🕑 Base Plan (UTC-timed):</b>\n"
+                                    "/base – Manage your standard BTC updates\n"
+                                    "Choose automatic updates every 15min, 30min, 1h, 4h, or daily.\n\n"
+
+                                    "<b>📆 Personal Plans (local-time):</b>\n"
+                                    "/personal – Manage your custom BTC alerts\n"
+                                    "Set, view, or remove *local-time* subscriptions.\n\n"
                                 
                                     "<b>💳 Account & Settings:</b>\n"
                                     "/upgrade – Learn about Pro/Ultra tiers\n"
-                                    "/reset – Reset all your preferences\n"
-                                    "/change_language – Change the interface language",
+                                    "/timezone – Set your local time zone\n"
+                                    "/language – Change the interface language\n\n"
+
+                                    "<b>💙 Support the Project:</b>\n"
+                                    "/donate – Help keep this bot running\n"
+                                    "Support the developer or help cover server costs.\n\n",
                                     parse_mode="HTML"
                                 )
 
@@ -53,7 +60,9 @@ async def open_main_menu(update: Update, context: CallbackContext) -> None:
                        "Choose an action below:\n"
                        "• Check BTC price\n"
                        "• Manage subscriptions\n"
-                       "• Customize time and currency settings",
+                       "• Customize time and currency settings\n"
+                       "• Change language settings\n"
+                       "• Support the developer\n",
                        reply_markup=reply_markup,
                        parse_mode="HTML"
                        )

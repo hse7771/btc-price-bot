@@ -6,13 +6,12 @@ from telegram.ext import (Application, AIORateLimiter, CommandHandler, CallbackQ
 
 from config import TOKEN, FETCH_INTERVAL
 from db.db import init_db
-from handlers.timezone import timezone_conversation_handler, cancel_timezone_setup
+from handlers.timezone import timezone_conversation_handler, cancel_timezone_setup, open_time_settings_menu
 from util import close_http_session
 from handlers.price import get_price_command_click, refresh_price_cache
 from handlers.currency import set_currency_command_click
-from handlers.base_plan import subscribe_base_command_click, unsubscribe_base_command_click
-from handlers.personal_plan import (view_personal_plans_command_click, open_cancel_personal_menu,
-                                    cancel_personal_plan, add_personal_conversation_handler)
+from handlers.base_plan import open_base_sub_menu_command_click
+from handlers.personal_plan import (cancel_personal_plan, add_personal_conversation_handler, open_personal_sub_menu)
 from handlers.core import start_command, help_command
 from button_router import button_click_handler
 from scheduler import notify_subscribers
@@ -39,21 +38,21 @@ async def main():
     # Register command handlers
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
-
     app.add_handler(CommandHandler("price", get_price_command_click))
-    app.add_handler(CommandHandler("set_currency", set_currency_command_click))
+    app.add_handler(CommandHandler("currency", set_currency_command_click))
 
-    app.add_handler(CommandHandler("subscribe_base", subscribe_base_command_click))
-    app.add_handler(CommandHandler("unsubscribe_base", unsubscribe_base_command_click))
+    app.add_handler(CommandHandler("base", open_base_sub_menu_command_click))
+    app.add_handler(CommandHandler("personal", open_personal_sub_menu))
 
-    app.add_handler(CommandHandler("view_personal", view_personal_plans_command_click))
-    app.add_handler(CommandHandler("cancel_personal", open_cancel_personal_menu))
+    # app.add_handler(CommandHandler("upgrade", open))
+    app.add_handler(CommandHandler("timezone", open_time_settings_menu))
+    # app.add_handler(CommandHandler("language", open_language_change_menu))
+
+    # app.add_handler(CommandHandler("donate", open_donate_menu))
 
     app.add_handler(add_personal_conversation_handler)
     app.add_handler(timezone_conversation_handler)
     app.add_handler(MessageHandler(filters.Regex("^❌ Cancel$"), cancel_timezone_setup))
-
-
     app.add_handler(CallbackQueryHandler(cancel_personal_plan, pattern=r"^cancel_personal_plan_\d+$"))
 
     app.add_handler(CallbackQueryHandler(button_click_handler))
