@@ -11,7 +11,7 @@ async def open_base_sub_menu_command_click(update: Update, context: CallbackCont
 
     await send_or_edit(update,
         "📅 *Manage your base BTC price subscriptions:*\n\n"
-        "🕑 These are standard intervals: every 15, 30, 60 minutes, 4 hours, and 24 hours.\n\n"
+        "🕑 These are standard intervals (15 min, 30 min, 60 min, 4 h, 24 h) sent on the *UTC* clock.\n\n"
         "Choose the options below:",
         parse_mode="Markdown",
         reply_markup=reply_markup)

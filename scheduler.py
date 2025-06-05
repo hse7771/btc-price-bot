@@ -61,7 +61,8 @@ async def notify_subscribers(context: ContextTypes.DEFAULT_TYPE):
 
 def is_time_to_send_base(interval_minutes: int) -> bool:
     now = datetime.utcnow()
-    return (now.minute % interval_minutes) == 0
+    total_minutes = now.hour * 60 + now.minute  # 0-1439 UTC
+    return (total_minutes % interval_minutes) == 0
 
 
 def is_time_to_send_personal(first_fire: datetime, interval: int, now: datetime) -> bool:

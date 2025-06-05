@@ -19,7 +19,8 @@ async def open_personal_sub_menu(update: Update, context: CallbackContext) -> No
 
     await send_or_edit(update,
         "📆 *Manage your personal BTC update plans:*\n\n"
-        "⚙️ These are fully customizable timers (e.g., every 7 min, start at 14:00).\n\n"
+        "⚙️ These are fully customizable local-time timers (e.g. every 7 min, start at 14:00).\n"
+        "They always respect the timezone you set.\n\n"
         "Choose an option below:",
         parse_mode="Markdown",
         reply_markup=reply_markup
