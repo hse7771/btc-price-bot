@@ -44,10 +44,13 @@ async def help_command(update: Update, context: CallbackContext) -> None:
                                     "/upgrade – Learn about Pro/Ultra tiers\n"
                                     "/timezone – Set your local time zone\n"
                                     "/language – Change the interface language\n\n"
-
+                                    
                                     "<b>💙 Support the Project:</b>\n"
                                     "/donate – Help keep this bot running\n"
-                                    "Support the developer or help cover server costs.\n\n",
+                                    "Support the developer or help cover server costs.\n\n"
+                               
+                                    "<b>🛟 Need Help?</b>\n"
+                                    "Contact support: @YourSupportUsername\n\n",
                                     parse_mode="HTML"
                                 )
 

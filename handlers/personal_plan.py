@@ -68,7 +68,7 @@ async def add_personal_start(update: Update, context: CallbackContext) -> int:
     if existing >= max_plans:
         await send_or_edit(update,
                            f"❌ You’ve reached your plan limit or your subscription has expired.\n"
-                           f"Upgrade your tier to add more.",
+                           f"Upgrade or renew your tier to add more.",
                            reply_markup=InlineKeyboardMarkup([
                                             [InlineKeyboardButton("💳 Upgrade", callback_data="open_upgrade_menu")],
                                             [InlineKeyboardButton("⬅️ Back", callback_data="open_personal_sub_menu")]
