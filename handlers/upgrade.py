@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from time import time
 from urllib.parse import parse_qs
@@ -6,7 +7,7 @@ from telegram import Update, LabeledPrice
 from telegram.ext import CallbackContext, ContextTypes
 
 from db.db import get_user_tier, remove_invoice_from_db, record_invoice, get_expired_invoice_messages, record_payment, \
-    update_user_tier
+    update_user_tier, get_expired_subscriptions, downgrade_user, get_personal_plans, delete_personal_plan
 from handlers.personal_plan import open_personal_sub_menu
 from keyboard import build_upgrade_keyboard, build_payment_keyboard
 from util import send_or_edit, safe_delete_message
@@ -14,6 +15,7 @@ from config import TIERS, TierConvertFromNumber, UKASSA_TEST_TOKEN, SMART_GLOCAL
 
 EXPIRY_SECONDS = 300
 SUB_DURATION_DAYS = 30
+GRACE_PERIOD = 24 * 3600
 
 async def open_upgrade_menu(update: Update, context: CallbackContext) -> None:
     """Displays the upgrade menu with available tiers and user’s current status."""
@@ -102,6 +104,8 @@ async def send_invoice(update: Update, context: CallbackContext, tier_type: Tier
         "yoomoney": UKASSA_TEST_TOKEN,
         "smart_glocal": SMART_GLOCAL_TEST_TOKEN
     }.get(provider)
+    if provider_token is None:
+        raise RuntimeError(f"Invalid provider token for {provider!r}")
 
     msg = await context.bot.send_invoice(
         chat_id=user_id,
@@ -223,5 +227,88 @@ async def handle_successful_payment(update: Update, context: ContextTypes.DEFAUL
                        "✅ Payment successful! Your subscription has been activated.")
     await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id, msg_id=msg.message_id, delay=5)
     await open_personal_sub_menu(update, context)
-    await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id,
-                              msg_id=context.chat_data["previous_upgrade_menu_msg_id"])
+    prev_id = context.chat_data.get("previous_upgrade_menu_msg_id")
+    if prev_id:
+        await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id,
+                              msg_id=prev_id)
+
+
+async def downgrade_expired_subscriptions(context: CallbackContext) -> None:
+    now = datetime.utcnow()
+    expired_users = await get_expired_subscriptions()
+
+    for user_id, expiry_iso, tier in expired_users:
+        expiry_dt = datetime.fromisoformat(expiry_iso)
+        seconds_since_expiry = (now - expiry_dt).total_seconds()
+        seconds_left = GRACE_PERIOD - seconds_since_expiry
+
+        if tier != TierConvertFromNumber.FREE:
+            await downgrade_user(user_id, expiry_iso)
+            logging.info(f"🔻 Downgraded user {user_id} (expired on {expiry_iso}).")
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=(
+                    "⚠️ Your paid subscription has expired.\n"
+                    "You have *24 hours* since your expiration date to renew. "
+                    "After that, extra personal plans will be removed."
+                ),
+                parse_mode="Markdown",
+            )
+
+        if seconds_left <= 0:
+            seconds_left = 0
+        job_name = f"grace_prune_{user_id}"
+        existing = context.job_queue.get_jobs_by_name(job_name)
+        if not existing:
+            context.job_queue.run_once(
+                prune_after_grace,
+                when=seconds_left,
+                data=user_id,
+                name=job_name
+            )
+
+
+async def prune_after_grace(context: CallbackContext) -> None:
+    user_id = context.job.data
+    current_tier = TierConvertFromNumber(await get_user_tier(user_id))
+    tier_config = TIERS[current_tier]
+
+    # Enforce plan count and interval based on CURRENT tier limits
+    await prune_personal_plans_for_tier(
+        user_id=user_id,
+        max_plans=tier_config.mx_personal_plans,
+        min_interval=tier_config.mn_interval,
+    )
+
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=f"ℹ️ Grace period ended.\n"
+             f"If you did not renew your subscription or proceeded with lower tier, "
+             f"some personal plans could be disabled to match your current tier limits."
+    )
+
+    # 3) Finally clear subscription_end so this row is never seen again
+    if current_tier == TierConvertFromNumber.FREE:
+        await update_user_tier(user_id, current_tier, expiry_date=None)
+    logging.info(f"✅ Pruned and cleared expiry for user {user_id}.")
+
+
+async def prune_personal_plans_for_tier(user_id: int, max_plans: int, min_interval: int) -> None:
+
+    # Fetch all personal plans for the user
+    plans = await get_personal_plans(user_id)
+    valid_plans = []
+
+    # Step 1: Filter by min_interval
+    for plan_id, interval, _ in plans:
+        if interval < min_interval:
+            await delete_personal_plan(plan_id)
+        else:
+            valid_plans.append((plan_id, interval))
+
+    # Step 2: Enforce max plan count
+    if len(valid_plans) > max_plans:
+        # Keep earliest plans, remove the rest
+        to_remove = valid_plans[max_plans:]
+        for plan_id, _ in to_remove:
+            await delete_personal_plan(plan_id)

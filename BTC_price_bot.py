@@ -9,7 +9,7 @@ from config import TOKEN, FETCH_INTERVAL
 from db.db import init_db
 from handlers.timezone import timezone_conversation_handler, cancel_timezone_setup, open_time_settings_menu
 from handlers.upgrade import open_upgrade_menu, cleanup_expired_invoices, handle_precheckout_query, \
-    handle_successful_payment
+    handle_successful_payment, downgrade_expired_subscriptions
 from util import close_http_session
 from handlers.price import get_price_command_click, refresh_price_cache
 from handlers.currency import set_currency_command_click
@@ -75,6 +75,9 @@ async def main():
         app.job_queue.run_repeating(notify_subscribers, interval=60, first=delay_subs)
         delay_cache = (delay_subs + 30) % 60
         app.job_queue.run_repeating(refresh_price_cache, interval=FETCH_INTERVAL, first=delay_cache)
+
+        # Every 8 hours
+        app.job_queue.run_repeating(downgrade_expired_subscriptions, interval=8*3600, first=5)
         try:
             # This keeps the loop alive forever
             await asyncio.Event().wait()
