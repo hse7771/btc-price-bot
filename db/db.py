@@ -186,7 +186,7 @@ async def get_personal_plans(user_id: int) -> list[tuple[int, int, str]]:
     db = await get_db()
 
     async with db.execute(
-            "SELECT id, interval_minutes, first_fire_time FROM personal_subscribers WHERE user_id = ?",
+            "SELECT id, interval_minutes, first_fire_time FROM personal_subscribers WHERE user_id = ? ORDER BY created_at",
             (user_id,)
         ) as cursor:
             return await cursor.fetchall()
@@ -229,7 +229,7 @@ ON CONFLICT(user_id) DO UPDATE SET
     updated_at       = CURRENT_TIMESTAMP
 """
 
-async def update_user_tier(user_id: int, new_tier: TierConvertFromNumber, expiry_date: str):
+async def update_user_tier(user_id: int, new_tier: TierConvertFromNumber, expiry_date: str | None):
     db = await get_db()
     await execute_write(db, UPDATE_TIER,(user_id, new_tier, expiry_date,))
 
@@ -318,3 +318,19 @@ DELETE_INVOICE = "DELETE FROM invoices WHERE message_id = ?"
 async def remove_invoice_from_db(message_id: int):
     db = await get_db()
     await execute_write(db, DELETE_INVOICE, (message_id,))
+
+
+GET_EXPIRED_SUBS = """
+SELECT user_id, subscription_end, tier
+FROM   user_subscriptions
+WHERE  subscription_end IS NOT NULL AND  subscription_end < CURRENT_TIMESTAMP
+"""
+
+async def get_expired_subscriptions() -> list[tuple[int, str, int]]:
+    db = await get_db()
+    async with db.execute(GET_EXPIRED_SUBS) as cursor:
+        return await cursor.fetchall()
+
+
+async def downgrade_user(user_id: int, expiry_date: str | None = None) -> None:
+   await update_user_tier(user_id, TierConvertFromNumber.FREE, expiry_date)
