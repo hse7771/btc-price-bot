@@ -94,6 +94,13 @@ async def safe_delete_message(bot: Bot, chat_id: int, msg_id: int, delay: float=
         logging.debug(f"Delete failed for message {msg_id} in chat {chat_id}: {e}")
 
 
+async def delete_tracked_messages(bot: Bot, chat_id: int, user_data: dict[str, int]) -> None:
+    ids = user_data.pop("temporary_msg_ids", [])
+    for msg_id in ids:
+        await safe_delete_message(bot, chat_id, msg_id)
+    user_data.clear()
+
+
 def validate_time_hhmm(text: str) -> tuple[int, int] | None:
     """Parses HH:MM time string. Returns (hour, minute) or None if invalid."""
     try:

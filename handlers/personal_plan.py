@@ -8,7 +8,7 @@ from db.db import get_personal_plans, get_user_tier, count_personal_plans, add_p
     get_user_timezone
 from config import TIERS, FREE_TIER, PRO_TIER, ULTRA_TIER, TierConvertFromNumber
 from handlers.timezone import open_time_settings_menu
-from util import send_or_edit, convert_utc_to_local, convert_local_to_utc, validate_time_hhmm
+from util import send_or_edit, convert_utc_to_local, convert_local_to_utc, validate_time_hhmm, delete_tracked_messages
 from keyboard import build_personal_sub_keyboard
 
 
@@ -92,7 +92,7 @@ async def add_personal_start(update: Update, context: CallbackContext) -> int:
             [InlineKeyboardButton("🌍 Time Settings", callback_data="open_time_settings_menu_wrapper")]
         )
     reply_markup = InlineKeyboardMarkup(buttons)
-    await send_or_edit(update,
+    msg = await send_or_edit(update,
             warning +
             "🕒 *Enter your desired interval in minutes (e.g. 15):*\n"
             f"📌 Free tier: ≥{FREE_TIER.mn_interval} min, {FREE_TIER.mx_personal_plans} plan\n"
@@ -101,6 +101,7 @@ async def add_personal_start(update: Update, context: CallbackContext) -> int:
             parse_mode="Markdown",
             reply_markup=reply_markup
     )
+    context.user_data["wizard_msg_id"] = msg.message_id
     return GET_INTERVAL
 
 
@@ -110,16 +111,16 @@ async def open_time_settings_menu_wrapper(update: Update, context: CallbackConte
 
 
 async def add_personal_interval(update: Update, context: CallbackContext) -> int:
-    reply_markup_cancel = InlineKeyboardMarkup([
-        [InlineKeyboardButton("❌ Cancel", callback_data="cancel_add_process_personal_p")]
-    ])
+    msg = update.message
+    context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
+
     try:
         interval = int(update.message.text.strip())
     except ValueError:
-        await send_or_edit(update,
-               "❌ Please enter a valid number (e.g. 15).",
-               reply_markup=reply_markup_cancel
+        msg = await send_or_edit(update,
+               "❌ Please enter a valid number (e.g. 15)."
         )
+        context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
         return GET_INTERVAL
 
     tier = context.user_data.get("tier", 0)
@@ -127,41 +128,40 @@ async def add_personal_interval(update: Update, context: CallbackContext) -> int
     max_plans, min_interval = tier_info.mx_personal_plans, tier_info.mn_interval
 
     if interval < min_interval:
-        await send_or_edit(update,
+        msg = await send_or_edit(update,
                            f"❌ Your minimum allowed interval is {min_interval} min.\n"
-                           f"Try again with a higher value.",
-                           reply_markup=reply_markup_cancel
+                           f"Try again with a higher value."
                            )
+        context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
         return GET_INTERVAL
 
 
     # Valid → store in context
     context.user_data["interval"] = interval
-    await send_or_edit(update,
+    msg = await send_or_edit(update,
                        "📍 Now enter the start time in *HH:MM* format (e.g. 14:30):",
-                       reply_markup=reply_markup_cancel,
                        parse_mode="Markdown"
                        )
+    context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
     return GET_START_TIME
 
 
 async def add_personal_start_time(update: Update, context: CallbackContext) -> int:
+    msg = update.message
+    context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
+
     user_id = update.effective_user.id
     text = update.message.text.strip()
     interval = context.user_data["interval"]
 
-    reply_markup_cancel = InlineKeyboardMarkup([
-        [InlineKeyboardButton("❌ Cancel", callback_data="cancel_add_process_personal_p")]
-    ])
-
     # Validate time format
     validated_time = validate_time_hhmm(text)
     if validated_time is None:
-        await send_or_edit(update,
+        msg = await send_or_edit(update,
                            "❌ Invalid time format. Please use *HH:MM* (e.g. *14:30*).",
-                           parse_mode="Markdown",
-                           reply_markup=reply_markup_cancel
+                           parse_mode="Markdown"
                            )
+        context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
         return GET_START_TIME
     else:
         hour, minute = validated_time
@@ -185,10 +185,14 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
                        reply_markup=build_personal_sub_keyboard(),
                        parse_mode="Markdown"
     )
+    context.user_data.setdefault("temporary_msg_ids", []).append(context.user_data["wizard_msg_id"])
+    await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)
     return ConversationHandler.END
 
 
 async def cancel_add_process_personal_p(update: Update, context: CallbackContext) -> int:
+
+    await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)
     await send_or_edit(update, "❌ Action cancelled.")
     await open_personal_sub_menu(update, context)
     return ConversationHandler.END
