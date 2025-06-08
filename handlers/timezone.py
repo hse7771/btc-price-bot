@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from db.db import set_user_timezone, get_user_timezone
 from keyboard import build_time_settings_keyboard
-from util import send_or_edit, validate_time_hhmm, safe_delete_message, format_utc_offset
+from util import send_or_edit, validate_time_hhmm, safe_delete_message, format_utc_offset, delete_tracked_messages
 
 SETUP_METHOD, SET_MANUAL_TIME, SET_TZ_LOCATION = range(3)
 
@@ -58,24 +58,18 @@ async def request_location(update: Update, context: CallbackContext) -> int:
         [KeyboardButton("❌ Cancel")]
     ]
     markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
-    next_msg: Message = await send_or_edit(update,
+    msg: Message = await send_or_edit(update,
                        "📡 Please share your location to detect your timezone.",
                        reply_markup=markup)
-    if next_msg:
-        context.user_data["msg_to_delete_id"] = next_msg.message_id
-
-    previous_msg = update.callback_query.message
-
-    await safe_delete_message(context.bot, previous_msg.chat.id, previous_msg.message_id)
+    context.user_data.setdefault("temporary_msg_ids", []).append(update.callback_query.message.message_id)
+    context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
     return SET_TZ_LOCATION
 
 
 async def handle_location(update: Update, context: CallbackContext) -> int:
+    context.user_data.setdefault("temporary_msg_ids", []).append(update.message.message_id)
     user = update.effective_user
     location = update.message.location
-    chat_id = update.effective_chat.id
-    bot = context.bot
-    await safe_delete_message(bot, chat_id, context.user_data["msg_to_delete_id"])
 
     tf = TimezoneFinder()
     timezone_name = tf.timezone_at(lng=location.longitude, lat=location.latitude)
@@ -84,14 +78,14 @@ async def handle_location(update: Update, context: CallbackContext) -> int:
         offset = datetime.now(pytz.timezone(timezone_name)).utcoffset().total_seconds() // 60
         await set_user_timezone(user.id, timezone_name, int(offset), "location")
 
-        confirm_msg: Message = await send_or_edit(update,
+        msg: Message = await send_or_edit(update,
             f"✅ Timezone set to `{timezone_name}`.",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardRemove()
         )
-        await safe_delete_message(bot, chat_id, update.message.message_id, 2)
-        await safe_delete_message(bot, chat_id, confirm_msg.message_id, 1)
+        context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
         await open_time_settings_menu(update, context)
+        await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)
     else:
 
         await send_or_edit(update,"❌ Could not determine timezone from location.",
@@ -107,55 +101,47 @@ async def request_manual_time(update: Update, context: CallbackContext) -> int:
             [InlineKeyboardButton("❌ Cancel", callback_data="cancel_timezone_setup")]
         ])
     )
-    context.user_data["manual_time_prompt_id"] = msg.message_id
+    context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
     return SET_MANUAL_TIME
 
 
 async def process_manual_time(update: Update, context: CallbackContext) -> int:
-    user_time = update.message.text.strip()
+    context.user_data.setdefault("temporary_msg_ids", []).append(update.message.message_id)
     user_id = update.effective_user.id
     chat_id = update.effective_chat.id
     bot = context.bot
-    user_msg_id = update.message.message_id
 
+    user_time = update.message.text.strip()
     validated_time = validate_time_hhmm(user_time)
     if validated_time is None:
-        context.user_data.setdefault("manual_time_errors", []).append(user_msg_id)
-        error_msg: Message = await send_or_edit(update,
+        msg: Message = await send_or_edit(update,
             "❌ Invalid format. Use *HH:MM* (e.g. *14:30*).",
             parse_mode="Markdown"
         )
-        context.user_data["manual_time_errors"].append(error_msg.message_id)
+        context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
         return SET_MANUAL_TIME
     else:
         hour, minute = validated_time
 
+    offset_minutes = calculate_offset(hour, minute)
+    await set_user_timezone(user_id, None, offset_minutes, "manual")
+
+    offset_caption = format_utc_offset(offset_minutes)
+    msg: Message = await send_or_edit(update, f"✅ Offset set: {offset_caption}")
+    context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
+
     # Cleanup previous messages on success
-    for msg_id in context.user_data.get("manual_time_errors", []):
-        await safe_delete_message(bot, chat_id, msg_id)
-    context.user_data.pop("manual_time_errors", None)
+    await delete_tracked_messages(bot, chat_id, context.user_data)
+    await open_time_settings_menu(update, context)
+    return ConversationHandler.END
 
-    await safe_delete_message(bot, chat_id, user_msg_id)
-    await safe_delete_message(bot, chat_id, context.user_data["manual_time_prompt_id"])
-    context.user_data.pop("manual_time_prompt_id", None)
 
+def calculate_offset(hour: int, minute: int) -> int:
     now_utc = datetime.utcnow()
     local_candidate = now_utc.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if local_candidate < now_utc:
         local_candidate += timedelta(days=1)
-
     seconds = (local_candidate - now_utc).total_seconds()
-    offset_minutes = calculate_offset(seconds)
-    await set_user_timezone(user_id, None, offset_minutes, "manual")
-
-    offset_caption = format_utc_offset(offset_minutes)
-    prev_msg: Message = await send_or_edit(update, f"✅ Offset set: {offset_caption}")
-    await open_time_settings_menu(update, context)
-    await safe_delete_message(bot, chat_id, prev_msg.message_id, 1.75)
-    return ConversationHandler.END
-
-
-def calculate_offset(seconds: float) -> int:
     minutes = seconds / 60.0
     offset_minutes = round(minutes / 5.0) * 5
     return offset_minutes - 1440 if offset_minutes > 720 else offset_minutes
@@ -166,16 +152,12 @@ async def cancel_timezone_setup(update: Update, context: CallbackContext) -> int
         await send_or_edit(update, "❌ Action cancelled.")
         await open_time_settings_menu(update, context)
     else:
-        chat_id = update.effective_chat.id
-        bot = context.bot
-
-        await safe_delete_message(bot, chat_id, update.message.message_id)
-        prev_msg: Message = await send_or_edit(update, "❌ Action cancelled.", reply_markup=ReplyKeyboardRemove())
-        await safe_delete_message(bot, chat_id, context.user_data["msg_to_delete_id"])
-        context.user_data.pop("msg_to_delete_id", None)
+        context.user_data.setdefault("temporary_msg_ids", []).append(update.message.message_id)
+        msg: Message = await send_or_edit(update, "❌ Action cancelled.", reply_markup=ReplyKeyboardRemove())
+        context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
+        await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)
 
         await open_time_settings_menu(update, context)
-        await safe_delete_message(bot, chat_id, prev_msg.message_id)
     return ConversationHandler.END
 
 
