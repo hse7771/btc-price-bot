@@ -77,6 +77,7 @@ async def init_db():
                 CREATE TABLE IF NOT EXISTS payments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
+                    operation_type TEXT NOT NULL,
                     tier INTEGER NOT NULL,
                     currency TEXT NOT NULL,
                     amount INTEGER NOT NULL,  -- in cents/kopecks
@@ -281,15 +282,15 @@ async def get_user_timezone(user_id: int) -> dict | None:
 
 
 RECORD_PAYMENT = """
-INSERT INTO payments (user_id, tier, currency, amount, provider, telegram_payment_charge_id, provider_payment_charge_id) 
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO payments (user_id, operation_type, tier, currency, amount, provider, telegram_payment_charge_id, provider_payment_charge_id) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 """
-async def record_payment(user_id: int, tier: TierConvertFromNumber,
+async def record_payment(user_id: int, operation_type: str, tier: TierConvertFromNumber,
                         currency: str, amount: int, provider: str,
                         telegram_charge_id: str, provider_charge_id: str) -> None:
     db = await get_db()
     await execute_write(db, RECORD_PAYMENT,
-                        (user_id, int(tier),
+                        (user_id, operation_type, int(tier),
                                     currency, amount, provider,
                                     telegram_charge_id, provider_charge_id))
 
