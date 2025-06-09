@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from urllib.parse import parse_qs
 from zoneinfo import ZoneInfo
 from typing import Dict, Optional
 from collections import defaultdict
@@ -148,3 +149,17 @@ def format_utc_offset(offset_minutes: int) -> str:
     abs_min   = abs(offset_minutes)
     hours, mm = divmod(abs_min, 60)
     return f"UTC{sign}{hours:02}:{mm:02}"
+
+
+def parse_payload(payload: str) -> dict[str, str | int] | None:
+    try:
+        parts = parse_qs(payload)
+        return {
+            "tier": parts["tier"][0],
+            "provider": parts["provider"][0],
+            "user_id": int(parts["user"][0]),
+            "ts": int(parts["timestamp"][0]),
+            "operation_type": parts["operation_type"][0],
+        }
+    except (KeyError, ValueError, IndexError):
+        return None
