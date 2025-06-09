@@ -7,9 +7,10 @@ from telegram.ext import (Application, AIORateLimiter, CommandHandler, CallbackQ
 
 from config import TOKEN, FETCH_INTERVAL
 from db.db import init_db
+from handlers.donate import open_donate_menu
 from handlers.timezone import timezone_conversation_handler, cancel_timezone_setup, open_time_settings_menu
-from handlers.upgrade import open_upgrade_menu, cleanup_expired_invoices, handle_precheckout_query, \
-    handle_successful_payment, downgrade_expired_subscriptions
+from handlers.upgrade import open_upgrade_menu, downgrade_expired_subscriptions
+from services.payment import cleanup_expired_invoices, handle_precheckout_query, handle_successful_payment
 from util import close_http_session
 from handlers.price import get_price_command_click, refresh_price_cache
 from handlers.currency import set_currency_command_click
@@ -17,7 +18,7 @@ from handlers.base_plan import open_base_sub_menu_command_click
 from handlers.personal_plan import (cancel_personal_plan, add_personal_conversation_handler, open_personal_sub_menu)
 from handlers.core import start_command, help_command
 from button_router import button_click_handler
-from scheduler import notify_subscribers
+from services.scheduler import notify_subscribers
 
 
 # Set up logging for debugging
@@ -52,7 +53,7 @@ async def main():
     app.add_handler(CommandHandler("timezone", open_time_settings_menu))
     # app.add_handler(CommandHandler("language", open_language_change_menu))
 
-    # app.add_handler(CommandHandler("donate", open_donate_menu))
+    app.add_handler(CommandHandler("donate", open_donate_menu))
 
     app.add_handler(add_personal_conversation_handler)
     app.add_handler(CallbackQueryHandler(cancel_personal_plan, pattern=r"^cancel_personal_plan_\d+$"))
