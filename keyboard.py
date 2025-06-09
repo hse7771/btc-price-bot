@@ -11,6 +11,7 @@ def build_main_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("🔔 Base Plan", callback_data="open_base_sub_menu")],
         [InlineKeyboardButton("📆 Personal Plan", callback_data="open_personal_sub_menu")],
         [InlineKeyboardButton("🌍 Time Settings", callback_data="open_time_settings_menu")],
+        [InlineKeyboardButton("☕ Donate", callback_data="open_donate_menu")],
         [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -84,11 +85,18 @@ def build_upgrade_keyboard() -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(keyboard)
 
-
-def build_payment_keyboard(tier_type: str) -> InlineKeyboardMarkup:
+def build_upgrade_payment_keyboard(tier_type: str) -> InlineKeyboardMarkup:
     keyboard = [
         [InlineKeyboardButton("🇷🇺 Pay with ЮMoney", callback_data=f"pay_{tier_type}_yoomoney")],
         [InlineKeyboardButton("🌍 Pay with Smart Glocal", callback_data=f"pay_{tier_type}_smart_glocal")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_upgrade_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
+
+
+def build_donate_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🇷🇺 Donate with ЮMoney", callback_data=f"donate_yoomoney")],
+        [InlineKeyboardButton("🌍 Donate with Smart Glocal", callback_data=f"donate_smart_glocal")],
+        [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
+    ])
