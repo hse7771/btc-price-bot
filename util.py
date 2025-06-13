@@ -18,7 +18,7 @@ from telegram import (
 )
 
 from config import CURRENCIES
-from db.db import load_user_currencies
+from db.db import load_user_currencies, get_user_timezone
 
 HTTP_SESSION: aiohttp.ClientSession | None = None
 USER_LIMIT = defaultdict(lambda: AsyncLimiter(1, 1))
@@ -84,8 +84,14 @@ async def format_price_message(price_data: dict, user_id: int) -> str:
         if currency.lower() in price_data:
             message += f"💰 *{currency.upper()}:* {price_data[currency.lower()]:,}\n"
 
-    now = datetime.now().strftime("%H:%M:%S")
-    message += f"\n🕒 Last updated at: `{now}`"
+    utc_now = datetime.utcnow()
+    tz_data = await get_user_timezone(user_id)
+    if tz_data and (tz_data.get("timezone") or tz_data.get("method")):
+        local_now = convert_utc_to_local(utc_now, tz_data)
+        stamp = local_now.strftime("%H:%M:%S")
+    else:
+        stamp = utc_now.strftime("%H:%M:%S UTC")
+    message += f"\n🕒 Last updated at: `{stamp}`"
     return message
 
 
