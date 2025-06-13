@@ -1,15 +1,28 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
-from config import CURRENCIES, PREDEFINED_INTERVALS, TierConvertFromNumber, PROVIDERS
-from handlers.donate import open_donate_menu
-from handlers.price import get_price_command_click, refresh_price_click
-from handlers.currency import (set_currency_command_click, toggle_currency, confirm_currency_selection,
-                               clear_currency_selection)
-from handlers.base_plan import (open_base_sub_menu_command_click, subscribe_base_command_click,
-                                unsubscribe_base_command_click, confirm_base_sub, confirm_unbase_sub)
-from handlers.personal_plan import open_personal_sub_menu, view_personal_plans_command_click, open_cancel_personal_menu
+from config import CURRENCIES, PREDEFINED_INTERVALS, PROVIDERS, TierConvertFromNumber
+from handlers.base_plan import (
+    confirm_base_sub,
+    confirm_unbase_sub,
+    open_base_sub_menu_command_click,
+    subscribe_base_command_click,
+    unsubscribe_base_command_click,
+)
 from handlers.core import open_main_menu
+from handlers.currency import (
+    clear_currency_selection,
+    confirm_currency_selection,
+    set_currency_command_click,
+    toggle_currency,
+)
+from handlers.donate import open_donate_menu
+from handlers.personal_plan import (
+    open_cancel_personal_menu,
+    open_personal_sub_menu,
+    view_personal_plans_command_click,
+)
+from handlers.price import get_price_command_click, refresh_price_click
 from handlers.timezone import open_time_settings_menu, view_time_settings
 from handlers.upgrade import open_upgrade_menu, upgrade_to_pro, upgrade_to_ultra
 from services.payment import send_invoice

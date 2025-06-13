@@ -5,8 +5,8 @@ from datetime import datetime
 from telegram.ext import ContextTypes
 
 from config import PREDEFINED_INTERVALS
-from db.db import get_base_subscribers, get_all_personal
-from handlers.price import get_btc_price, format_price_message
+from db.db import get_all_personal, get_base_subscribers
+from handlers.price import format_price_message, get_btc_price
 
 
 async def notify_subscribers(context: ContextTypes.DEFAULT_TYPE):
@@ -44,9 +44,7 @@ async def notify_subscribers(context: ContextTypes.DEFAULT_TYPE):
         user_ids.append(user_id)
         tasks.append(
             app.bot.send_message(
-                chat_id=user_id,
-                text=f"📢 *BTC Update* 📢\n\n{message}",
-                parse_mode="Markdown"
+                chat_id=user_id, text=f"📢 *BTC Update* 📢\n\n{message}", parse_mode="Markdown"
             )
         )
     # Run all send tasks in parallel, safely
@@ -56,7 +54,6 @@ async def notify_subscribers(context: ContextTypes.DEFAULT_TYPE):
             logging.error(
                 f"❌ Failed to send message to user {uid} | {type(result).__name__}: {result}"
             )
-
 
 
 def is_time_to_send_base(interval_minutes: int) -> bool:

@@ -1,0 +1,10 @@
+[tool.black]
+line-length = 120             # Allow up to 100 characters per line (default is 88)
+target-version = ["py311"]    # Target Python 3.11 for syntax compatibility
+
+[tool.isort]
+profile = "black"             # Match isort's style to black (avoids conflicts)
+
+[tool.flake8]
+max-line-length = 120         # Align with black's line length for harmony
+exclude = [".venv", "__pycache__", ".git"]  # Skip common non-code folders

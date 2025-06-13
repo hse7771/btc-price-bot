@@ -3,26 +3,34 @@ from time import time
 from telegram import Update
 from telegram.ext import CallbackContext, ContextTypes
 
-from config import UKASSA_TEST_TOKEN, SMART_GLOCAL_TEST_TOKEN, EXPIRY_SECONDS, TierConvertFromNumber, TIER_NAMES, \
-    PROVIDERS
-from db.db import record_invoice, remove_invoice_from_db, get_expired_invoice_messages, record_payment
+from config import (
+    EXPIRY_SECONDS,
+    PROVIDERS,
+    SMART_GLOCAL_TEST_TOKEN,
+    TIER_NAMES,
+    UKASSA_TEST_TOKEN,
+    TierConvertFromNumber,
+)
+from db.db import (
+    get_expired_invoice_messages,
+    record_invoice,
+    record_payment,
+    remove_invoice_from_db,
+)
 from handlers.donate import handle_successful_donate_payment, send_invoice_donate
 from handlers.upgrade import handle_successful_upgrade_payment, send_invoice_upgrade
-from util import safe_delete_message, send_or_edit, parse_payload
+from util import parse_payload, safe_delete_message, send_or_edit
 
 PROVIDER_TOKENS = {
-    "yoomoney":     UKASSA_TEST_TOKEN,
+    "yoomoney": UKASSA_TEST_TOKEN,
     "smart_glocal": SMART_GLOCAL_TEST_TOKEN,
 }
 
-OPERATION_TYPES = {
-    "sub",
-    "donation"
-}
+OPERATION_TYPES = {"sub", "donation"}
 
 
-async def send_invoice(update: Update, context: CallbackContext, tier_type: TierConvertFromNumber, provider: str,
-                       currency: str, op_t: str) -> None:
+async def send_invoice(update: Update, context: CallbackContext, tier_type: TierConvertFromNumber,
+                       provider: str, currency: str, op_t: str) -> None:
     provider_token = PROVIDER_TOKENS.get(provider)
     if provider_token is None:
         raise RuntimeError(f"Invalid provider token for {provider!r}")
@@ -34,8 +42,12 @@ async def send_invoice(update: Update, context: CallbackContext, tier_type: Tier
     context.chat_data["invoice_msg_id"] = msg_id
 
     await record_invoice(message_id=msg_id, chat_id=update.effective_chat.id, created_at=int(time()))
-    context.job_queue.run_once(delete_invoice_msg_record, when=EXPIRY_SECONDS,
-                               data=(update.effective_chat.id, msg_id), name=f"del_{msg_id}")
+    context.job_queue.run_once(
+        delete_invoice_msg_record,
+        when=EXPIRY_SECONDS,
+        data=(update.effective_chat.id, msg_id),
+        name=f"del_{msg_id}",
+    )
 
 
 async def delete_invoice_msg_record(context: CallbackContext) -> None:
@@ -127,5 +139,3 @@ async def handle_successful_payment(update: Update, context: ContextTypes.DEFAUL
         await handle_successful_upgrade_payment(update, context, user_id, new_tier)
     elif operation_type == "donation":
         await handle_successful_donate_payment(update, context)
-
-

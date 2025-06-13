@@ -1,18 +1,24 @@
 import asyncio
 import logging
+from collections import defaultdict
 from datetime import datetime, timedelta
+from typing import Dict, Optional
 from urllib.parse import parse_qs
 from zoneinfo import ZoneInfo
-from typing import Dict, Optional
-from collections import defaultdict
 
 import aiohttp
 from aiolimiter import AsyncLimiter
-from telegram import Bot, Message, Update, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import (
+    Bot,
+    InlineKeyboardMarkup,
+    Message,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    Update,
+)
 
 from config import CURRENCIES
 from db.db import load_user_currencies
-
 
 HTTP_SESSION: aiohttp.ClientSession | None = None
 USER_LIMIT = defaultdict(lambda: AsyncLimiter(1, 1))
@@ -63,7 +69,6 @@ async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict | None:
 
 
 async def close_http_session():
-    global HTTP_SESSION
     if HTTP_SESSION and not HTTP_SESSION.closed:
         await HTTP_SESSION.close()
 
@@ -84,7 +89,7 @@ async def format_price_message(price_data: dict, user_id: int) -> str:
     return message
 
 
-async def safe_delete_message(bot: Bot, chat_id: int, msg_id: int, delay: float=0):
+async def safe_delete_message(bot: Bot, chat_id: int, msg_id: int, delay: float = 0):
     """
     Tries to delete a message silently. Fails silently if message is already gone or not deletable.
     """
@@ -146,7 +151,7 @@ def format_utc_offset(offset_minutes: int) -> str:
     for the signed integer offset (minutes).
     """
     sign = "+" if offset_minutes >= 0 else "-"
-    abs_min   = abs(offset_minutes)
+    abs_min = abs(offset_minutes)
     hours, mm = divmod(abs_min, 60)
     return f"UTC{sign}{hours:02}:{mm:02}"
 

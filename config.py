@@ -4,7 +4,6 @@ from enum import IntEnum
 
 from dotenv import load_dotenv
 
-
 # Load environment variables from .env file
 load_dotenv()
 
@@ -20,13 +19,15 @@ CURRENCIES = ["USD", "RUB", "EUR", "CAD", "GBP", "CNY"]
 BLOCKCHAIN_API = "https://blockchain.info/ticker"
 COINGECKO_API = f"https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={','.join(CURRENCIES)}"
 PREDEFINED_INTERVALS = [15, 30, 60, 240, 1440]  # In minutes
-FETCH_INTERVAL = 60   # seconds
+FETCH_INTERVAL = 60  # seconds
 EXPIRY_SECONDS = 300
+
 
 @dataclass(frozen=True)
 class PriceInfo:
     currency: str  # Symbol like "$"
     amount: float
+
 
 @dataclass(frozen=True)
 class Tier:
@@ -36,9 +37,10 @@ class Tier:
     mn_interval: int
     emoji: str
 
+
 class TierConvertFromNumber(IntEnum):
-    FREE  = 0
-    PRO   = 1
+    FREE = 0
+    PRO = 1
     ULTRA = 2
 
 

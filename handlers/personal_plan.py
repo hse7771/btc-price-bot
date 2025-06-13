@@ -1,29 +1,48 @@
 from datetime import datetime, timedelta
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackContext, ConversationHandler, CallbackQueryHandler, CommandHandler, MessageHandler, \
-    filters
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (
+    CallbackContext,
+    CallbackQueryHandler,
+    CommandHandler,
+    ConversationHandler,
+    MessageHandler,
+    filters,
+)
 
-from db.db import get_personal_plans, get_user_tier, count_personal_plans, add_personal_plan, delete_personal_plan, \
-    get_user_timezone
-from config import TIERS, FREE_TIER, PRO_TIER, ULTRA_TIER, TierConvertFromNumber
+from config import FREE_TIER, PRO_TIER, TIERS, ULTRA_TIER, TierConvertFromNumber
+from db.db import (
+    add_personal_plan,
+    count_personal_plans,
+    delete_personal_plan,
+    get_personal_plans,
+    get_user_tier,
+    get_user_timezone,
+)
 from handlers.timezone import open_time_settings_menu
-from util import send_or_edit, convert_utc_to_local, convert_local_to_utc, validate_time_hhmm, delete_tracked_messages
 from keyboard import build_personal_sub_keyboard
-
+from util import (
+    convert_local_to_utc,
+    convert_utc_to_local,
+    delete_tracked_messages,
+    send_or_edit,
+    validate_time_hhmm,
+)
 
 GET_INTERVAL, GET_START_TIME = range(2)
+
 
 async def open_personal_sub_menu(update: Update, context: CallbackContext) -> None:
     reply_markup = build_personal_sub_keyboard()
 
-    await send_or_edit(update,
+    await send_or_edit(
+        update,
         "📆 *Manage your personal BTC update plans:*\n\n"
         "⚙️ These are fully customizable local-time timers (e.g. every 7 min, start at 14:00).\n"
         "They always respect the timezone you set.\n\n"
         "Choose an option below:",
         parse_mode="Markdown",
-        reply_markup=reply_markup
+        reply_markup=reply_markup,
     )
 
 
@@ -54,53 +73,50 @@ async def view_personal_plans_command_click(update: Update, context: CallbackCon
     await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
-
 async def add_personal_start(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
 
     # Validate tier
     tier = await get_user_tier(user_id)
     tier_info = TIERS.get(TierConvertFromNumber(tier), FREE_TIER)
-    max_plans, min_interval = tier_info.mx_personal_plans, tier_info.mn_interval
+    max_plans = tier_info.mx_personal_plans
 
     existing = await count_personal_plans(user_id)
 
     if existing >= max_plans:
         await send_or_edit(update,
-                           f"❌ You’ve reached your plan limit or your subscription has expired.\n"
-                           f"Upgrade or renew your tier to add more.",
+                           "❌ You’ve reached your plan limit or your subscription has expired.\n"
+                           "Upgrade or renew your tier to add more.",
                            reply_markup=InlineKeyboardMarkup([
-                                            [InlineKeyboardButton("💳 Upgrade", callback_data="open_upgrade_menu")],
-                                            [InlineKeyboardButton("⬅️ Back", callback_data="open_personal_sub_menu")]
+                                    [InlineKeyboardButton("💳 Upgrade", callback_data="open_upgrade_menu")],
+                                    [InlineKeyboardButton("⬅️ Back", callback_data="open_personal_sub_menu")]
                            ])
                            )
         return ConversationHandler.END
 
     context.user_data["tier"] = tier
-    buttons = [
-        [InlineKeyboardButton("❌ Cancel", callback_data="cancel_add_process_personal_p")]
-    ]
+    buttons = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_add_process_personal_p")]]
     # ⚠️ Warn if no timezone configured
     tz_data = await get_user_timezone(user_id)
     warning = ""
     if tz_data["method"] is None:
         warning = (
-                    "⚠️ *Heads up!* You haven’t set your timezone yet.\n"
-                    "Notifications may fire at the wrong local time.\n\n"
+            "⚠️ *Heads up!* You haven’t set your timezone yet.\n"
+            "Notifications may fire at the wrong local time.\n\n"
         )
         buttons.insert(0,
-            [InlineKeyboardButton("🌍 Time Settings", callback_data="open_time_settings_menu_wrapper")]
-        )
+                       [InlineKeyboardButton("🌍 Time Settings", callback_data="open_time_settings_menu_wrapper")]
+                       )
     reply_markup = InlineKeyboardMarkup(buttons)
     msg = await send_or_edit(update,
-            warning +
-            "🕒 *Enter your desired interval in minutes (e.g. 15):*\n"
-            f"📌 Free tier: ≥{FREE_TIER.mn_interval} min, {FREE_TIER.mx_personal_plans} plan\n"
-            f"📌 Pro tier: ≥{PRO_TIER.mn_interval} min, up to {PRO_TIER.mx_personal_plans} plans\n"
-            f"📌 Ultra tier: ≥{ULTRA_TIER.mn_interval} min, up to {ULTRA_TIER.mx_personal_plans} plans",
-            parse_mode="Markdown",
-            reply_markup=reply_markup
-    )
+                             warning +
+                             "🕒 *Enter your desired interval in minutes (e.g. 15):*\n"
+                             f"📌 Free tier: ≥{FREE_TIER.mn_interval} min, {FREE_TIER.mx_personal_plans} plan\n"
+                             f"📌 Pro tier: ≥{PRO_TIER.mn_interval} min, up to {PRO_TIER.mx_personal_plans} plans\n"
+                             f"📌 Ultra tier: ≥{ULTRA_TIER.mn_interval} min, up to {ULTRA_TIER.mx_personal_plans} plans",
+                             parse_mode="Markdown",
+                             reply_markup=reply_markup
+                             )
     context.user_data["wizard_msg_id"] = msg.message_id
     return GET_INTERVAL
 
@@ -117,31 +133,27 @@ async def add_personal_interval(update: Update, context: CallbackContext) -> int
     try:
         interval = int(update.message.text.strip())
     except ValueError:
-        msg = await send_or_edit(update,
-               "❌ Please enter a valid number (e.g. 15)."
-        )
+        msg = await send_or_edit(update, "❌ Please enter a valid number (e.g. 15).")
         context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
         return GET_INTERVAL
 
     tier = context.user_data.get("tier", 0)
     tier_info = TIERS.get(TierConvertFromNumber(tier), FREE_TIER)
-    max_plans, min_interval = tier_info.mx_personal_plans, tier_info.mn_interval
+    min_interval = tier_info.mn_interval
 
     if interval < min_interval:
-        msg = await send_or_edit(update,
-                           f"❌ Your minimum allowed interval is {min_interval} min.\n"
-                           f"Try again with a higher value."
-                           )
+        msg = await send_or_edit(
+            update,
+            f"❌ Your minimum allowed interval is {min_interval} min.\n"
+            f"Try again with a higher value.",
+        )
         context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
         return GET_INTERVAL
-
 
     # Valid → store in context
     context.user_data["interval"] = interval
     msg = await send_or_edit(update,
-                       "📍 Now enter the start time in *HH:MM* format (e.g. 14:30):",
-                       parse_mode="Markdown"
-                       )
+                             "📍 Now enter the start time in *HH:MM* format (e.g. 14:30):", parse_mode="Markdown")
     context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
     return GET_START_TIME
 
@@ -157,33 +169,32 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
     # Validate time format
     validated_time = validate_time_hhmm(text)
     if validated_time is None:
-        msg = await send_or_edit(update,
-                           "❌ Invalid time format. Please use *HH:MM* (e.g. *14:30*).",
-                           parse_mode="Markdown"
-                           )
+        msg = await send_or_edit(
+            update,
+            "❌ Invalid time format. Please use *HH:MM* (e.g. *14:30*).",
+            parse_mode="Markdown",
+        )
         context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
         return GET_START_TIME
     else:
         hour, minute = validated_time
 
-
     # 🔄 Load user tz & compute first_fire in UTC
     tz_data = await get_user_timezone(user_id)
     utc_now = datetime.utcnow()
     local_now = convert_utc_to_local(utc_now, tz_data)
-    first_local = local_now.replace(hour=hour, minute=minute,
-                                    second=0, microsecond=0)
+    first_local = local_now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if first_local <= local_now:  # already passed today → tomorrow
         first_local += timedelta(days=1)
 
     first_fire = convert_local_to_utc(first_local, tz_data)
     await add_personal_plan(user_id, interval, first_fire.isoformat(" "))
 
-    await send_or_edit(update,
-        f"✅ Custom plan saved:\n"
-        f"Every *{interval}* min, start: *{hour:02}:{minute:02}*.",
-                       reply_markup=build_personal_sub_keyboard(),
-                       parse_mode="Markdown"
+    await send_or_edit(
+        update,
+        f"✅ Custom plan saved:\n" f"Every *{interval}* min, start: *{hour:02}:{minute:02}*.",
+        reply_markup=build_personal_sub_keyboard(),
+        parse_mode="Markdown",
     )
     context.user_data.setdefault("temporary_msg_ids", []).append(context.user_data["wizard_msg_id"])
     await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)
@@ -191,7 +202,6 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
 
 
 async def cancel_add_process_personal_p(update: Update, context: CallbackContext) -> int:
-
     await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)
     await send_or_edit(update, "❌ Action cancelled.")
     await open_personal_sub_menu(update, context)
@@ -236,18 +246,26 @@ async def cancel_personal_plan(update: Update, context: CallbackContext):
 
 
 add_personal_conversation_handler = ConversationHandler(
-        entry_points=[CallbackQueryHandler(add_personal_start, pattern="^add_personal$"),
-                      CommandHandler("add_personal", add_personal_start)],
-        states={
-            GET_INTERVAL: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_interval),
-                CallbackQueryHandler(cancel_add_process_personal_p, pattern= "^cancel_add_process_personal_p$"),
-                CallbackQueryHandler(open_time_settings_menu_wrapper, pattern= "^open_time_settings_menu_wrapper$"),
-            ],
-            GET_START_TIME: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_start_time),
-                CallbackQueryHandler(cancel_add_process_personal_p, pattern= "^cancel_add_process_personal_p$"),
-            ],
-        },
-        fallbacks=[],
-    )
+    entry_points=[
+        CallbackQueryHandler(add_personal_start, pattern="^add_personal$"),
+        CommandHandler("add_personal", add_personal_start),
+    ],
+    states={
+        GET_INTERVAL: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_interval),
+            CallbackQueryHandler(
+                cancel_add_process_personal_p, pattern="^cancel_add_process_personal_p$"
+            ),
+            CallbackQueryHandler(
+                open_time_settings_menu_wrapper, pattern="^open_time_settings_menu_wrapper$"
+            ),
+        ],
+        GET_START_TIME: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_start_time),
+            CallbackQueryHandler(
+                cancel_add_process_personal_p, pattern="^cancel_add_process_personal_p$"
+            ),
+        ],
+    },
+    fallbacks=[],
+)

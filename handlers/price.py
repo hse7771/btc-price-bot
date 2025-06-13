@@ -1,21 +1,22 @@
 import asyncio
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 import aiohttp
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from config import CURRENCIES, COINGECKO_API, BLOCKCHAIN_API, FETCH_INTERVAL
-from util import send_or_edit, format_price_message, get_http_session, fetch_json
+from config import BLOCKCHAIN_API, COINGECKO_API, CURRENCIES, FETCH_INTERVAL
 from keyboard import build_price_keyboard
+from util import fetch_json, format_price_message, get_http_session, send_or_edit
 
 
 @dataclass(slots=True)
 class PriceCache:
     data: dict[str, Any]
     ts: datetime
+
 
 PRICE_CACHE: PriceCache | None = None
 CACHE_LOCK = asyncio.Lock()
@@ -97,8 +98,11 @@ async def get_price_blockchain(session: aiohttp.ClientSession) -> dict | None:
     data = await fetch_json(session, BLOCKCHAIN_API)
 
     if data:
-        prices = {currency.lower(): round(info['last']) for currency, info in data.items() if
-                  currency in CURRENCIES}
+        prices = {
+            currency.lower(): round(info["last"])
+            for currency, info in data.items()
+            if currency in CURRENCIES
+        }
         return prices
     return None
 
