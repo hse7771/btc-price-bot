@@ -51,7 +51,7 @@ async def help_command(update: Update, context: CallbackContext) -> None:
                        "Support the developer or help cover server costs.\n\n"
 
                        "<b>🛟 Need Help?</b>\n"
-                       "Contact support: @YourSupportUsername\n\n",
+                       "Contact support: YourSupportUsername@domain.com\n\n",
                        parse_mode="HTML"
                        )
 
