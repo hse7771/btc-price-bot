@@ -24,6 +24,7 @@ from keyboard import build_time_settings_keyboard
 from util import (
     delete_tracked_messages,
     format_utc_offset,
+    safe_convo_step,
     send_or_edit,
     validate_time_hhmm,
 )
@@ -71,6 +72,7 @@ async def view_time_settings(update: Update, context: CallbackContext) -> None:
     await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
+@safe_convo_step(menu_func=open_time_settings_menu)
 async def request_location(update: Update, context: CallbackContext) -> int:
     keyboard = [
         [KeyboardButton("📍 Share My Location", request_location=True)],
@@ -85,6 +87,7 @@ async def request_location(update: Update, context: CallbackContext) -> int:
     return SET_TZ_LOCATION
 
 
+@safe_convo_step(menu_func=open_time_settings_menu)
 async def handle_location(update: Update, context: CallbackContext) -> int:
     context.user_data.setdefault("temporary_msg_ids", []).append(update.message.message_id)
     user = update.effective_user
@@ -115,6 +118,7 @@ async def handle_location(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 
+@safe_convo_step(menu_func=open_time_settings_menu)
 async def request_manual_time(update: Update, context: CallbackContext) -> int:
     msg: Message = await send_or_edit(
         update,
@@ -128,6 +132,7 @@ async def request_manual_time(update: Update, context: CallbackContext) -> int:
     return SET_MANUAL_TIME
 
 
+@safe_convo_step(menu_func=open_time_settings_menu)
 async def process_manual_time(update: Update, context: CallbackContext) -> int:
     context.user_data.setdefault("temporary_msg_ids", []).append(update.message.message_id)
     user_id = update.effective_user.id
@@ -170,6 +175,7 @@ def calculate_offset(hour: int, minute: int) -> int:
     return offset_minutes - 1440 if offset_minutes > 720 else offset_minutes
 
 
+@safe_convo_step(menu_func=open_time_settings_menu)
 async def cancel_timezone_setup(update: Update, context: CallbackContext) -> int:
     if update.callback_query:
         await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)

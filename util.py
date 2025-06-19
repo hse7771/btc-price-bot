@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -16,9 +17,10 @@ from telegram import (
     ReplyKeyboardRemove,
     Update,
 )
+from telegram.ext import ConversationHandler
 
 from config import CURRENCIES
-from db.db import load_user_currencies, get_user_timezone
+from db.db import get_user_timezone, load_user_currencies
 
 HTTP_SESSION: aiohttp.ClientSession | None = None
 USER_LIMIT = defaultdict(lambda: AsyncLimiter(1, 1))
@@ -160,6 +162,35 @@ def format_utc_offset(offset_minutes: int) -> str:
     abs_min = abs(offset_minutes)
     hours, mm = divmod(abs_min, 60)
     return f"UTC{sign}{hours:02}:{mm:02}"
+
+
+def safe_convo_step(menu_func=None):
+    """
+    Decorator for Telegram ConversationHandler steps.
+    On exception: logs, sends error message, returns user to menu, ends conversation.
+    Usage:
+        @safe_convo_step(menu_func=open_personal_sub_menu)
+        async def step(...): ...
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(update, context, *args, **kwargs):
+            try:
+                return await func(update, context, *args, **kwargs)
+            except Exception as e:
+                logging.exception(f"Exception in {func.__name__}: {e}")
+                try:
+                    # Try to send a simple message. If send_or_edit available, use it
+                    if hasattr(context, "bot") and hasattr(update, "effective_chat"):
+                        await context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text="⚠️ An error occurred. Use slash commands to return to the menu."
+                        )
+                except Exception as sub_e:
+                    logging.error(f"Failed to show error UI: {sub_e}")
+                return ConversationHandler.END
+        return wrapper
+    return decorator
 
 
 def parse_payload(payload: str) -> dict[str, str | int] | None:

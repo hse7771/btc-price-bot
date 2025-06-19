@@ -25,6 +25,7 @@ from util import (
     convert_local_to_utc,
     convert_utc_to_local,
     delete_tracked_messages,
+    safe_convo_step,
     send_or_edit,
     validate_time_hhmm,
 )
@@ -73,9 +74,9 @@ async def view_personal_plans_command_click(update: Update, context: CallbackCon
     await send_or_edit(update, message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
+@safe_convo_step(menu_func=open_personal_sub_menu)
 async def add_personal_start(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
-
     # Validate tier
     tier = await get_user_tier(user_id)
     tier_info = TIERS.get(TierConvertFromNumber(tier), FREE_TIER)
@@ -126,6 +127,7 @@ async def open_time_settings_menu_wrapper(update: Update, context: CallbackConte
     return ConversationHandler.END
 
 
+@safe_convo_step(menu_func=open_personal_sub_menu)
 async def add_personal_interval(update: Update, context: CallbackContext) -> int:
     msg = update.message
     context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
@@ -158,6 +160,7 @@ async def add_personal_interval(update: Update, context: CallbackContext) -> int
     return GET_START_TIME
 
 
+@safe_convo_step(menu_func=open_personal_sub_menu)
 async def add_personal_start_time(update: Update, context: CallbackContext) -> int:
     msg = update.message
     context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
@@ -201,6 +204,7 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
     return ConversationHandler.END
 
 
+@safe_convo_step(menu_func=open_personal_sub_menu)
 async def cancel_add_process_personal_p(update: Update, context: CallbackContext) -> int:
     await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)
     await send_or_edit(update, "❌ Action cancelled.")
