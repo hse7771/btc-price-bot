@@ -73,9 +73,7 @@ async def main():
     app.add_handler(CommandHandler("donate", open_donate_menu))
 
     app.add_handler(add_personal_conversation_handler)
-    app.add_handler(
-        CallbackQueryHandler(cancel_personal_plan, pattern=r"^cancel_personal_plan_\d+$")
-    )
+    app.add_handler(CallbackQueryHandler(cancel_personal_plan, pattern=r"^cancel_personal_plan_\d+$"))
 
     app.add_handler(timezone_conversation_handler)
     app.add_handler(MessageHandler(filters.Regex("^❌ Cancel$"), cancel_timezone_setup))
