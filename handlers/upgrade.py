@@ -140,13 +140,13 @@ async def handle_successful_upgrade_payment(update: Update, context: ContextType
 
     # 4. Confirm to user
     msg = await send_or_edit(update, "✅ Payment successful! Your subscription has been activated.")
+    prev_id = context.chat_data.get("previous_upgrade_menu_msg_id")
+    await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id, msg_id=prev_id)
+
     await safe_delete_message(
         bot=context.bot, chat_id=update.effective_chat.id, msg_id=msg.message_id, delay=5
     )
     await open_personal_sub_menu(update, context)
-    prev_id = context.chat_data.get("previous_upgrade_menu_msg_id")
-    if prev_id:
-        await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id, msg_id=prev_id)
 
 
 async def downgrade_expired_subscriptions(context: CallbackContext) -> None:

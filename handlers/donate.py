@@ -52,10 +52,10 @@ async def send_invoice_donate(update: Update, context: CallbackContext, tier_typ
 async def handle_successful_donate_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # 4. Confirm to user
     msg = await send_or_edit(update, "✅ Donation successful! Your support is appreciated.")
+    prev_id = context.chat_data.get("previous_upgrade_menu_msg_id")
+    await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id, msg_id=prev_id)
+
     await safe_delete_message(
         bot=context.bot, chat_id=update.effective_chat.id, msg_id=msg.message_id, delay=5
     )
     await open_main_menu(update, context)
-    prev_id = context.chat_data.get("previous_upgrade_menu_msg_id")
-    if prev_id:
-        await safe_delete_message(bot=context.bot, chat_id=update.effective_chat.id, msg_id=prev_id)
