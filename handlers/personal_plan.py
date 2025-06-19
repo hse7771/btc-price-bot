@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
@@ -184,7 +184,7 @@ async def add_personal_start_time(update: Update, context: CallbackContext) -> i
 
     # 🔄 Load user tz & compute first_fire in UTC
     tz_data = await get_user_timezone(user_id)
-    utc_now = datetime.utcnow()
+    utc_now = datetime.now(timezone.utc)
     local_now = convert_utc_to_local(utc_now, tz_data)
     first_local = local_now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if first_local <= local_now:  # already passed today → tomorrow

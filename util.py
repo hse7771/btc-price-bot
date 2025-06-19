@@ -2,7 +2,7 @@ import asyncio
 import functools
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 from urllib.parse import parse_qs
 from zoneinfo import ZoneInfo
@@ -86,7 +86,7 @@ async def format_price_message(price_data: dict, user_id: int) -> str:
         if currency.lower() in price_data:
             message += f"💰 *{currency.upper()}:* {price_data[currency.lower()]:,}\n"
 
-    utc_now = datetime.utcnow()
+    utc_now = datetime.now(timezone.utc)
     tz_data = await get_user_timezone(user_id)
     if tz_data and (tz_data.get("timezone") or tz_data.get("method")):
         local_now = convert_utc_to_local(utc_now, tz_data)
@@ -186,6 +186,7 @@ def safe_convo_step(menu_func=None):
                             chat_id=update.effective_chat.id,
                             text="⚠️ An error occurred. Use slash commands to return to the menu."
                         )
+                        # await menu_func(update, context)
                 except Exception as sub_e:
                     logging.error(f"Failed to show error UI: {sub_e}")
                 return ConversationHandler.END

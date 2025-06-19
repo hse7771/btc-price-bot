@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import aiohttp
@@ -64,14 +64,14 @@ async def _fetch_and_cache(session: aiohttp.ClientSession) -> dict | None:
     """
     global PRICE_CACHE
     # FAST PATH – no locking if data is already fresh
-    if PRICE_CACHE and (datetime.utcnow() - PRICE_CACHE.ts).total_seconds() < FETCH_INTERVAL:
+    if PRICE_CACHE and (datetime.now(timezone.utc) - PRICE_CACHE.ts).total_seconds() < FETCH_INTERVAL:
         return PRICE_CACHE.data
 
         # SLOW PATH – may need to refresh; take the lock
     async with CACHE_LOCK:  # suspend until lock is free
         #      re-check staleness because another coroutine might have refreshed
         #      while we were waiting.
-        if PRICE_CACHE and (datetime.utcnow() - PRICE_CACHE.ts).total_seconds() < FETCH_INTERVAL:
+        if PRICE_CACHE and (datetime.now(timezone.utc) - PRICE_CACHE.ts).total_seconds() < FETCH_INTERVAL:
             return PRICE_CACHE.data
 
         coingecko_task = asyncio.create_task(get_price_coingecko(session))
@@ -87,7 +87,7 @@ async def _fetch_and_cache(session: aiohttp.ClientSession) -> dict | None:
             data = blockchain_data
 
         if data:
-            PRICE_CACHE = PriceCache(data, datetime.utcnow())
+            PRICE_CACHE = PriceCache(data, datetime.now(timezone.utc))
 
         # leaving the `async with` block automatically releases the lock.
         return data

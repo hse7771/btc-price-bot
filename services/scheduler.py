@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from telegram.ext import ContextTypes
 
@@ -13,7 +13,7 @@ async def notify_subscribers(context: ContextTypes.DEFAULT_TYPE):
     """Background task that checks base plan subscribers and sends updates."""
 
     app = context.application
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     users_to_notify = set()
 
     # base plans
@@ -57,7 +57,7 @@ async def notify_subscribers(context: ContextTypes.DEFAULT_TYPE):
 
 
 def is_time_to_send_base(interval_minutes: int) -> bool:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     total_minutes = now.hour * 60 + now.minute  # 0-1439 UTC
     return (total_minutes % interval_minutes) == 0
 

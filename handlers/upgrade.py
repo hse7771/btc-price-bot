@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import time
 
 from telegram import LabeledPrice, Update
@@ -134,7 +134,7 @@ async def handle_successful_upgrade_payment(update: Update, context: ContextType
                                             user_id: int, new_tier: TierConvertFromNumber) -> None:
 
     # 3. Upgrade the user tier
-    expiry_dt = datetime.utcnow() + timedelta(days=SUB_DURATION_DAYS)
+    expiry_dt = datetime.now(timezone.utc) + timedelta(days=SUB_DURATION_DAYS)
     expiry_iso = expiry_dt.strftime("%Y-%m-%d %H:%M:%S")
     await update_user_tier(user_id, new_tier, expiry_iso)
 
@@ -150,7 +150,7 @@ async def handle_successful_upgrade_payment(update: Update, context: ContextType
 
 
 async def downgrade_expired_subscriptions(context: CallbackContext) -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expired_users = await get_expired_subscriptions()
 
     for user_id, expiry_iso, tier in expired_users:

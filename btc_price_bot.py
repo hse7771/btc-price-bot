@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from telegram.ext import (
     AIORateLimiter,
@@ -87,9 +87,9 @@ async def main():
     logging.info("🚀 Bot is running... Press Ctrl+C to stop.")
     async with app:
         await app.start()
-        await app.updater.start_polling()
+        await app.updater.start_polling(drop_pending_updates=True)
 
-        delay_subs = (60 - datetime.utcnow().second) % 60
+        delay_subs = (60 - datetime.now(timezone.utc).second) % 60
         app.job_queue.run_repeating(notify_subscribers, interval=60, first=delay_subs)
         delay_cache = (delay_subs + 30) % 60
         app.job_queue.run_repeating(refresh_price_cache, interval=FETCH_INTERVAL, first=delay_cache)

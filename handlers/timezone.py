@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytz
 from telegram import (
@@ -165,7 +165,7 @@ async def process_manual_time(update: Update, context: CallbackContext) -> int:
 
 
 def calculate_offset(hour: int, minute: int) -> int:
-    now_utc = datetime.utcnow()
+    now_utc = datetime.now(timezone.utc)
     local_candidate = now_utc.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if local_candidate < now_utc:
         local_candidate += timedelta(days=1)
