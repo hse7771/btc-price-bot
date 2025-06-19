@@ -254,18 +254,14 @@ add_personal_conversation_handler = ConversationHandler(
         GET_INTERVAL: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_interval),
             CallbackQueryHandler(
-                cancel_add_process_personal_p, pattern="^cancel_add_process_personal_p$"
-            ),
-            CallbackQueryHandler(
                 open_time_settings_menu_wrapper, pattern="^open_time_settings_menu_wrapper$"
             ),
         ],
         GET_START_TIME: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, add_personal_start_time),
-            CallbackQueryHandler(
-                cancel_add_process_personal_p, pattern="^cancel_add_process_personal_p$"
-            ),
         ],
     },
-    fallbacks=[],
+    fallbacks=[
+        CallbackQueryHandler(cancel_add_process_personal_p, pattern="^cancel_add_process_personal_p$"),
+    ],
 )

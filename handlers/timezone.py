@@ -197,8 +197,9 @@ timezone_conversation_handler = ConversationHandler(
         ],
         SET_MANUAL_TIME: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, process_manual_time),
-            CallbackQueryHandler(cancel_timezone_setup, pattern="^cancel_timezone_setup$"),
         ],
     },
-    fallbacks=[],
+    fallbacks=[
+        CallbackQueryHandler(cancel_timezone_setup, pattern="^cancel_timezone_setup$")
+    ],
 )
