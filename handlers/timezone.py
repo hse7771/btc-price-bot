@@ -124,7 +124,7 @@ async def request_manual_time(update: Update, context: CallbackContext) -> int:
             [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_timezone_setup")]]
         ),
     )
-    context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
+    context.user_data["wizard_time_msg_id"] = msg.message_id
     return SET_MANUAL_TIME
 
 
@@ -153,6 +153,7 @@ async def process_manual_time(update: Update, context: CallbackContext) -> int:
     context.user_data.setdefault("temporary_msg_ids", []).append(msg.message_id)
 
     # Cleanup previous messages on success
+    context.user_data.setdefault("temporary_msg_ids", []).append(context.user_data["wizard_time_msg_id"])
     await delete_tracked_messages(bot, chat_id, context.user_data)
     await open_time_settings_menu(update, context)
     return ConversationHandler.END
@@ -171,6 +172,7 @@ def calculate_offset(hour: int, minute: int) -> int:
 
 async def cancel_timezone_setup(update: Update, context: CallbackContext) -> int:
     if update.callback_query:
+        await delete_tracked_messages(bot=context.bot, chat_id=update.effective_chat.id, user_data=context.user_data)
         await send_or_edit(update, "❌ Action cancelled.")
         await open_time_settings_menu(update, context)
     else:
