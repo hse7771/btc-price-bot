@@ -1,0 +1,7 @@
+services:
+  btc-bot:
+    build: .
+    env_file: .env
+    volumes:
+      - ./db:/app/db
+    restart: always
