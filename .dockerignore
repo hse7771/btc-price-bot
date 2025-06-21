@@ -25,3 +25,8 @@ Thumbs.db
 # Git and metadata
 .git
 .gitignore
+
+ # Docs folders
+ docs/
+ images/
+ *.md
