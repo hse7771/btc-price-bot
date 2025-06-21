@@ -12,7 +12,6 @@ def build_main_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("📆 Personal Plan", callback_data="open_personal_sub_menu")],
         [InlineKeyboardButton("🌍 Time Settings", callback_data="open_time_settings_menu")],
         [InlineKeyboardButton("☕ Donate", callback_data="open_donate_menu")],
-        [InlineKeyboardButton("🌐 Change Language", callback_data="change_lang")],
     ]
     return InlineKeyboardMarkup(keyboard)
 

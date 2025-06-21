@@ -44,14 +44,13 @@ async def help_command(update: Update, context: CallbackContext) -> None:
                        "<b>💳 Account & Settings:</b>\n"
                        "/upgrade – Learn about Pro/Ultra tiers\n"
                        "/timezone – Set your local time zone\n"
-                       "/language – Change the interface language\n\n"
 
                        "<b>💙 Support the Project:</b>\n"
                        "/donate – Help keep this bot running\n"
                        "Support the developer or help cover server costs.\n\n"
 
                        "<b>🛟 Need Help?</b>\n"
-                       "Contact support: YourSupportUsername@domain.com\n\n",
+                       "Contact support: btcBotTg@proton.me\n\n",
                        parse_mode="HTML"
                        )
 
@@ -66,7 +65,6 @@ async def open_main_menu(update: Update, context: CallbackContext) -> None:
         "• Check BTC price\n"
         "• Manage subscriptions\n"
         "• Customize time and currency settings\n"
-        "• Change language settings\n"
         "• Support the developer\n",
         reply_markup=reply_markup,
         parse_mode="HTML",

@@ -68,7 +68,6 @@ async def main():
 
     app.add_handler(CommandHandler("upgrade", open_upgrade_menu))
     app.add_handler(CommandHandler("timezone", open_time_settings_menu))
-    # app.add_handler(CommandHandler("language", open_language_change_menu))
 
     app.add_handler(CommandHandler("donate", open_donate_menu))
 
