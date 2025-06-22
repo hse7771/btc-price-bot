@@ -24,6 +24,13 @@ EXPIRY_SECONDS = 300
 
 
 @dataclass(frozen=True)
+class Provider:
+    region: str
+    currency: str
+    provider: str
+
+
+@dataclass(frozen=True)
 class PriceInfo:
     currency: str  # Symbol like "$"
     amount: float
@@ -82,8 +89,8 @@ TIERS: dict[TierConvertFromNumber, Tier] = {
 }
 
 PROVIDERS = {
-    "yoomoney": "RUB",
-    "ammer_pay": "USD"
+    "yoomoney": Provider(region="RU", currency="RUB", provider="yoomoney"),
+    "ammer_pay": Provider(region="INT", currency="USD", provider="ammer_pay"),
 }
 
 TIER_NAMES = {"pro", "ultra"}

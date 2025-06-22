@@ -23,7 +23,7 @@ from util import parse_payload, safe_delete_message, send_or_edit
 
 PROVIDER_TOKENS = {
     "yoomoney": RU_TEST_TOKEN,
-    "smart_glocal": INTERNATIONAL_TEST_TOKEN,
+    "ammer_pay": INTERNATIONAL_TEST_TOKEN,
 }
 
 OPERATION_TYPES = {"sub", "donation"}

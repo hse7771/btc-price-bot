@@ -60,14 +60,14 @@ def initialize_button_handlers():
         handlers[f"unbase_{interval}"] = lambda u, c, i=interval: confirm_unbase_sub(u, c, i)
     # Dynamic handlers for different providers and tiers (upgrade)
     for tier in TierConvertFromNumber:
-        for provider, currency in PROVIDERS.items():
+        for provider, p_info in PROVIDERS.items():
             key = f"pay_{tier.name.lower()}_{provider}"
-            handlers[key] = lambda u, c, t=tier, p=provider, cur=currency, op_t="sub": (
+            handlers[key] = lambda u, c, t=tier, p=provider, cur=p_info.currency, op_t="sub": (
                 send_invoice(u, c, tier_type=t, provider=p, currency=cur, op_t=op_t))
     # Dynamic handlers for different providers (donate)
-    for provider, currency in PROVIDERS.items():
+    for provider, p_info in PROVIDERS.items():
         key = f"donate_{provider}"
-        handlers[key] = lambda u, c, t=TierConvertFromNumber.FREE, p=provider, cur=currency, op_t="donate": (
+        handlers[key] = lambda u, c, t=TierConvertFromNumber.FREE, p=provider, cur=p_info.currency, op_t="donate": (
             send_invoice(u, c, tier_type=t, provider=p, currency=cur, op_t=op_t))
 
     return handlers

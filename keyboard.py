@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from config import CURRENCIES
+from config import CURRENCIES, PROVIDERS
 from db.db import load_user_currencies
 
 
@@ -88,8 +88,10 @@ def build_upgrade_keyboard() -> InlineKeyboardMarkup:
 
 def build_upgrade_payment_keyboard(tier_type: str) -> InlineKeyboardMarkup:
     keyboard = [
-        [InlineKeyboardButton("🇷🇺 Pay with ЮMoney", callback_data=f"pay_{tier_type}_yoomoney")],
-        [InlineKeyboardButton("🌍 Pay with Ammer Pay", callback_data=f"pay_{tier_type}_smart_glocal")],
+        [InlineKeyboardButton("🇷🇺 Pay with ЮMoney",
+                              callback_data=f"pay_{tier_type}_{PROVIDERS['yoomoney'].provider}")],
+        [InlineKeyboardButton("🌍 Pay with Ammer Pay",
+                              callback_data=f"pay_{tier_type}_{PROVIDERS['ammer_pay'].provider}")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_upgrade_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -97,7 +99,9 @@ def build_upgrade_payment_keyboard(tier_type: str) -> InlineKeyboardMarkup:
 
 def build_donate_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🇷🇺 Donate with ЮMoney", callback_data="donate_yoomoney")],
-        [InlineKeyboardButton("🌍 Donate with Ammer Pay", callback_data="donate_smart_glocal")],
+        [InlineKeyboardButton("🇷🇺 Donate with ЮMoney",
+                              callback_data=f"donate_{PROVIDERS['yoomoney'].provider}")],
+        [InlineKeyboardButton("🌍 Donate with Ammer Pay",
+                              callback_data=f"donate_{PROVIDERS['ammer_pay'].provider}")],
         [InlineKeyboardButton("⬅️ Back", callback_data="open_main_menu")]
     ])
