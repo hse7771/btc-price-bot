@@ -5,10 +5,10 @@ from telegram.ext import CallbackContext, ContextTypes
 
 from config import (
     EXPIRY_SECONDS,
+    INTERNATIONAL_TEST_TOKEN,
     PROVIDERS,
-    SMART_GLOCAL_TEST_TOKEN,
+    RU_TEST_TOKEN,
     TIER_NAMES,
-    UKASSA_TEST_TOKEN,
     TierConvertFromNumber,
 )
 from db.db import (
@@ -22,8 +22,8 @@ from handlers.upgrade import handle_successful_upgrade_payment, send_invoice_upg
 from util import parse_payload, safe_delete_message, send_or_edit
 
 PROVIDER_TOKENS = {
-    "yoomoney": UKASSA_TEST_TOKEN,
-    "smart_glocal": SMART_GLOCAL_TEST_TOKEN,
+    "yoomoney": RU_TEST_TOKEN,
+    "smart_glocal": INTERNATIONAL_TEST_TOKEN,
 }
 
 OPERATION_TYPES = {"sub", "donation"}

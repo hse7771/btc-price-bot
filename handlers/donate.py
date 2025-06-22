@@ -8,7 +8,10 @@ from handlers.core import open_main_menu
 from keyboard import build_donate_keyboard
 from util import safe_delete_message, send_or_edit
 
-BASE_PRICE_RUB = 100
+BASE_PRICES = {
+    "RUB": 100,
+    "USD": 1,
+}
 DONATE_AMOUNTS = [5_000, 10_000, 20_000, 50_000]
 
 
@@ -40,7 +43,7 @@ async def send_invoice_donate(update: Update, context: CallbackContext, tier_typ
         payload=payload,
         provider_token=provider_token,
         currency=currency,
-        prices=[LabeledPrice("Donation", 100 * BASE_PRICE_RUB)],
+        prices=[LabeledPrice("Donation", 100 * BASE_PRICES[currency])],
         start_parameter=f"donate{user_id}",
         need_name=False,
         max_tip_amount=100_000,
