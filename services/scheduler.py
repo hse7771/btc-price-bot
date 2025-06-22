@@ -26,6 +26,7 @@ async def notify_subscribers(context: ContextTypes.DEFAULT_TYPE):
     rows = await get_all_personal()  # [(uid, interval, iso), …]
     for uid, interval, first_iso in rows:
         first_fire = datetime.fromisoformat(first_iso)
+        first_fire = first_fire.replace(tzinfo=timezone.utc)
         if is_time_to_send_personal(first_fire, interval, now):
             users_to_notify.add(uid)
 

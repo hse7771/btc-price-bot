@@ -223,10 +223,11 @@ async def open_cancel_personal_menu(update: Update, context: CallbackContext):
 
     message = "🗑️ Select a plan to cancel:"
     buttons = []
-
+    tz_data = await get_user_timezone(user_id)
     for plan_id, interval, first_fire_time in plans:
-        next_dt = datetime.fromisoformat(first_fire_time)
-        formatted_time = next_dt.strftime("%H:%M %d.%m.%y")
+        first_dt_utc = datetime.fromisoformat(first_fire_time)
+        first_dt_local = convert_utc_to_local(first_dt_utc, tz_data)
+        formatted_time = first_dt_local.strftime("%H:%M %d.%m.%y")
         buttons.append([
             InlineKeyboardButton(
                 f"❌ ⏱ Every {interval} min, {formatted_time} ",
