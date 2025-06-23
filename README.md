@@ -259,7 +259,13 @@ This project uses:
 
 ## 📄 License
 
-<!-- MIT license with link to LICENSE -->
+This project is licensed under the [MIT License](./LICENSE).
+
+You are free to use, modify, and distribute this software with minimal restrictions.  
+See the [LICENSE](./LICENSE) file for full details.
+
+_Disclaimer: This software is provided “as is”, without warranty of any kind.  
+The author is not liable for any damages or losses arising from its use. See the LICENSE file for details._
 
 ---
 
