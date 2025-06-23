@@ -6,7 +6,7 @@ import aiosqlite
 
 from config import TierConvertFromNumber
 
-DB_PATH = Path("db", "database files", "btc_bot_data.db")
+DB_PATH = Path("db", "database_files", "btc_bot_data.db")
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)  # auto-create folders
 DB_NAME = str(DB_PATH)
 

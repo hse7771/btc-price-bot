@@ -7,8 +7,7 @@ from keyboard import build_currency_keyboard
 from util import send_or_edit
 
 
-# Handle /set_currency command
-async def set_currency_command_click(update: Update, context: CallbackContext) -> None:
+async def open_currency_menu(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
 
     # target = update.message or update.callback_query.message  # ✅ supports both command and button
@@ -53,7 +52,7 @@ async def confirm_currency_selection(update: Update, context: CallbackContext) -
             "You can now check live BTC prices using these currencies."
         )
 
-    # Add a 📊 Check Price button
+    # Add a Check Price button
     keyboard = [[
         InlineKeyboardButton("📊 Check Price", callback_data="get_price"),
         InlineKeyboardButton("🌐 Change Currency", callback_data="open_currency_menu")

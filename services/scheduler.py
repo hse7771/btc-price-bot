@@ -64,12 +64,6 @@ def is_time_to_send_base(interval_minutes: int) -> bool:
 
 
 def is_time_to_send_personal(first_fire: datetime, interval: int, now: datetime) -> bool:
-    """
-    True if the plan should fire at *now*.
-      • first_fire : first trigger timestamp (UTC)
-      • interval   : recurrence in minutes
-      • now        : current UTC time (datetime.utcnow())
-    """
     if now < first_fire:
         return False
     elapsed_min = int((now - first_fire).total_seconds() // 60)

@@ -47,7 +47,7 @@ async def open_personal_sub_menu(update: Update, context: CallbackContext) -> No
     )
 
 
-async def view_personal_plans_command_click(update: Update, context: CallbackContext) -> None:
+async def view_personal_plans(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     plans = await get_personal_plans(user_id)
 

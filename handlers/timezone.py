@@ -49,8 +49,7 @@ async def open_time_settings_menu(update: Update, context: CallbackContext) -> N
 async def view_time_settings(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
 
-    # You need to implement this DB function if it doesn't exist yet
-    tz_info = await get_user_timezone(user_id)  # returns (tz_name or None, offset, method) or None
+    tz_info = await get_user_timezone(user_id)
 
     if not tz_info["method"]:
         message = "❌ You haven’t set your timezone yet."

@@ -5,9 +5,7 @@ from keyboard import build_main_keyboard
 from util import send_or_edit
 
 
-# Handle /start command
 async def start_command(update: Update, context: CallbackContext) -> None:
-    """Handles the /start command and sends a welcome message with buttons."""
     welcome_message = (
         "👋 *Welcome to the Bitcoin Price Bot!*\n\n"
         "Here’s what I can help you with:\n"

@@ -5,22 +5,22 @@ from config import CURRENCIES, PREDEFINED_INTERVALS, PROVIDERS, TierConvertFromN
 from handlers.base_plan import (
     confirm_base_sub,
     confirm_unbase_sub,
-    open_base_sub_menu_command_click,
-    subscribe_base_command_click,
-    unsubscribe_base_command_click,
+    open_base_sub_menu,
+    subscribe_base,
+    unsubscribe_base,
 )
 from handlers.core import open_main_menu
 from handlers.currency import (
     clear_currency_selection,
     confirm_currency_selection,
-    set_currency_command_click,
+    open_currency_menu,
     toggle_currency,
 )
 from handlers.donate import open_donate_menu
 from handlers.personal_plan import (
     open_cancel_personal_menu,
     open_personal_sub_menu,
-    view_personal_plans_command_click,
+    view_personal_plans,
 )
 from handlers.price import get_price_command_click, refresh_price_click
 from handlers.timezone import open_time_settings_menu, view_time_settings
@@ -34,15 +34,15 @@ def initialize_button_handlers():
     handlers = {
         "get_price": get_price_command_click,
         "refresh_price": refresh_price_click,
-        "open_currency_menu": set_currency_command_click,
+        "open_currency_menu": open_currency_menu,
         "close_menu": confirm_currency_selection,
         "currency_clear": clear_currency_selection,
         "open_main_menu": open_main_menu,
-        "open_base_sub_menu": open_base_sub_menu_command_click,
-        "subscribe_base": subscribe_base_command_click,
-        "unsubscribe_base": unsubscribe_base_command_click,
+        "open_base_sub_menu": open_base_sub_menu,
+        "subscribe_base": subscribe_base,
+        "unsubscribe_base": unsubscribe_base,
         "open_personal_sub_menu": open_personal_sub_menu,
-        "view_personal": view_personal_plans_command_click,
+        "view_personal": view_personal_plans,
         "open_cancel_personal_menu": open_cancel_personal_menu,
         "open_time_settings_menu": open_time_settings_menu,
         "view_time_settings": view_time_settings,
@@ -77,7 +77,6 @@ BUTTON_HANDLERS = initialize_button_handlers()
 
 
 async def button_click_handler(update: Update, context: CallbackContext) -> None:
-    """Handles button press for 📊 Price."""
     query = update.callback_query
     await query.answer()  # Acknowledge button press to Telegram
 

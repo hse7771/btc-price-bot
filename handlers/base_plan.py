@@ -11,7 +11,7 @@ from keyboard import build_base_sub_keyboard
 from util import send_or_edit
 
 
-async def open_base_sub_menu_command_click(update: Update, context: CallbackContext) -> None:
+async def open_base_sub_menu(update: Update, context: CallbackContext) -> None:
     reply_markup = build_base_sub_keyboard()
 
     await send_or_edit(
@@ -24,7 +24,7 @@ async def open_base_sub_menu_command_click(update: Update, context: CallbackCont
     )
 
 
-async def subscribe_base_command_click(update: Update, context: CallbackContext):
+async def subscribe_base(update: Update, context: CallbackContext):
     await open_base_intervals(
         update,
         message_text="📅 Choose how often you want BTC price updates:",
@@ -32,7 +32,7 @@ async def subscribe_base_command_click(update: Update, context: CallbackContext)
     )
 
 
-async def unsubscribe_base_command_click(update: Update, context: CallbackContext):
+async def unsubscribe_base(update: Update, context: CallbackContext):
     await open_base_intervals(
         update, message_text="⚙️ Choose interval to unsubscribe:", callback_prefix="unbase_"
     )

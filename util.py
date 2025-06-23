@@ -75,7 +75,6 @@ async def close_http_session():
         await HTTP_SESSION.close()
 
 
-# Function to format the price response message
 async def format_price_message(price_data: dict, user_id: int) -> str:
     """Formats the BTC price message with timestamp."""
     preferred = await load_user_currencies(user_id)
@@ -98,9 +97,7 @@ async def format_price_message(price_data: dict, user_id: int) -> str:
 
 
 async def safe_delete_message(bot: Bot, chat_id: int, msg_id: int, delay: float = 0):
-    """
-    Tries to delete a message silently. Fails silently if message is already gone or not deletable.
-    """
+    """Tries to delete a message silently. Fails silently if message is already gone or not deletable."""
     try:
         await asyncio.sleep(delay)
         await bot.delete_message(chat_id, msg_id)
@@ -112,7 +109,6 @@ async def delete_tracked_messages(bot: Bot, chat_id: int, user_data: dict[str, i
     ids = user_data.pop("temporary_msg_ids", [])
     for msg_id in ids:
         await safe_delete_message(bot, chat_id, msg_id)
-    user_data.clear()
 
 
 def validate_time_hhmm(text: str) -> tuple[int, int] | None:
@@ -126,9 +122,7 @@ def validate_time_hhmm(text: str) -> tuple[int, int] | None:
 
 
 def convert_local_to_utc(local_dt: datetime, tz_data: Dict) -> datetime:
-    """
-    Convert *naive* local_dt (user clock) → *naive* UTC datetime
-    """
+    """Convert *naive* local_dt (user clock) → *naive* UTC datetime"""
     tz_name, offset, method = tz_data["timezone"], tz_data["offset_minutes"], tz_data["method"]
     if method == "location" and tz_name:
         zone = ZoneInfo(tz_name)
@@ -141,9 +135,7 @@ def convert_local_to_utc(local_dt: datetime, tz_data: Dict) -> datetime:
 
 
 def convert_utc_to_local(utc_dt: datetime, tz_data: Dict) -> datetime:
-    """
-    Convert *naive* UTC datetime → *naive* local datetime
-    """
+    """Convert *naive* UTC datetime → *naive* local datetime"""
     tz_name, offset, method = tz_data["timezone"], tz_data["offset_minutes"], tz_data["method"]
     if method == "location" and tz_name:
         zone = ZoneInfo(tz_name)

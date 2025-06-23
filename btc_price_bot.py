@@ -15,9 +15,9 @@ from telegram.ext import (
 from button_router import button_click_handler
 from config import FETCH_INTERVAL, TOKEN
 from db.db import init_db
-from handlers.base_plan import open_base_sub_menu_command_click
+from handlers.base_plan import open_base_sub_menu
 from handlers.core import help_command, start_command
-from handlers.currency import set_currency_command_click
+from handlers.currency import open_currency_menu
 from handlers.donate import open_donate_menu
 from handlers.personal_plan import (
     add_personal_conversation_handler,
@@ -42,8 +42,6 @@ from util import close_http_session
 # Set up logging for debugging
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# Function to start the bot
-
 
 async def main():
     # init DB
@@ -61,9 +59,9 @@ async def main():
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("price", get_price_command_click))
-    app.add_handler(CommandHandler("currency", set_currency_command_click))
+    app.add_handler(CommandHandler("currency", open_currency_menu))
 
-    app.add_handler(CommandHandler("base", open_base_sub_menu_command_click))
+    app.add_handler(CommandHandler("base", open_base_sub_menu))
     app.add_handler(CommandHandler("personal", open_personal_sub_menu))
 
     app.add_handler(CommandHandler("upgrade", open_upgrade_menu))
