@@ -18,9 +18,9 @@
     <br /><br />
     <a href="#-demo"><strong>🎥 View Demo</strong></a>
     &nbsp;&nbsp;•&nbsp;&nbsp;
-    <a href="https://github.com/hse7771/btc-price-bot/issues/new?labels=bug&template=bug-report---.md"><strong>🐞 Report Bug</strong></a>
+    <a href="https://github.com/hse7771/btc-price-bot/issues/new?labels=bug&template=bug_report.md"><strong>🐞 Report Bug</strong></a>
     &nbsp;&nbsp;•&nbsp;&nbsp;
-    <a href="https://github.com/hse7771/btc-price-bot/issues/new?labels=enhancement&template=feature-request---.md"><strong>💡 Request Feature</strong></a>
+    <a href="https://github.com/hse7771/btc-price-bot/issues/new?labels=enhancement&template=feature_request.md"><strong>💡 Request Feature</strong></a>
   </p>
 
 
