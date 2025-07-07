@@ -87,12 +87,18 @@ async def main():
         await app.updater.start_polling(drop_pending_updates=True)
 
         delay_subs = (60 - datetime.now(timezone.utc).second) % 60
-        app.job_queue.run_repeating(notify_subscribers, interval=60, first=delay_subs)
+        app.job_queue.run_repeating(notify_subscribers,
+                                    interval=60, first=delay_subs,
+                                    job_kwargs={"misfire_grace_time": 5})
         delay_cache = (delay_subs + 30) % 60
-        app.job_queue.run_repeating(refresh_price_cache, interval=FETCH_INTERVAL, first=delay_cache)
+        app.job_queue.run_repeating(refresh_price_cache,
+                                    interval=FETCH_INTERVAL, first=delay_cache,
+                                    job_kwargs={"misfire_grace_time": 5})
 
         # Every 8 hours
-        app.job_queue.run_repeating(downgrade_expired_subscriptions, interval=8 * 3600, first=5)
+        app.job_queue.run_repeating(downgrade_expired_subscriptions,
+                                    interval=8 * 3600, first=5,
+                                    job_kwargs={"misfire_grace_time": 5})
         try:
             # This keeps the loop alive forever
             await asyncio.Event().wait()
