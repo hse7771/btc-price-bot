@@ -3,5 +3,5 @@ services:
     build: .
     env_file: .env
     volumes:
-      - ./db:/app/db
+      - ./db/database_files:/app/db/database_files
     restart: always
