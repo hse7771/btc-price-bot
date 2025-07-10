@@ -118,6 +118,10 @@ This document details the architecture and core design decisions behind **BTC Pr
 - **Beyond this scale:** For larger user bases, Telegram’s limit can be managed by buying telegram paid broadcasts, or 
     hosting own instance of Telegram Bot API server (all out of scope for this version but feasible as next steps).
 
+### Hosting Free Tier limitations  
+  
+- **AWS Free Tier:** provides 750 instance hours/month—enough for one always-on micro instance.
+
 ### Price Data API Limits
 
 - **Current setup:** We use a public API (blockchain.info or CoinGecko’s free endpoint), which does not enforce a 
@@ -144,5 +148,5 @@ _If you have a suggestion for improving limits or a use case requiring higher th
 - **Paid API integration:** Use paid plans for more frequent updates or a larger user base.
 - **Additional cryptocurrencies/currencies:** Allow tracking other coins or more fiat options.
 - **More payment providers:** Integrate additional gateways for global coverage.
-- **Self-hosted server or sharded architecture:** For massive scale (10,000+ users).
+- **Self-hosted server (Telegram API) or sharded architecture:** For massive scale (10,000+ users).
 - **Database upgrades:** If needed, swap SQLite for Postgres/MySQL to support more concurrent writes/reads.

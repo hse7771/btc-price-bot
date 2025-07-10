@@ -9,9 +9,10 @@ For basic installation and running instructions, see [Getting Started](../README
 ## Table of Contents
 
 - [Hosting Platform Options](#hosting-platform-options)
-  - [VPS / Cloud Servers (Recommended)](#vps--cloud-servers-recommended)
   - [Home Server or Always-on PC](#home-server-or-always-on-pc)
   - [Free / Serverless / Cloud App Platforms](#free--serverless--cloud-app-platforms)
+  - [VPS / Cloud Servers (Recommended)](#vps--cloud-servers-recommended)
+  - [Production Choice for BTC Price Bot: AWS EC2](#production-choice-for-btc-price-bot-aws-ec2)
 - [Docker in Production](#docker-in-production)
 - [Environment Variables & Secrets](#environment-variables--secrets)
 - [Database Location](#database-location)
@@ -21,25 +22,14 @@ For basic installation and running instructions, see [Getting Started](../README
 
 ## Hosting Platform Options
 
-### VPS / Cloud Servers (Recommended)
-
-- **Examples:** Hetzner, DigitalOcean, AWS EC2/Lightsail, Yandex.Cloud, Vultr, Linode, Azure, Google Cloud, Fly.io (see notes below).
-- **Pros:** Always-on, persistent storage, Docker support, full control, no artificial sleep limits.
-- **Free Tier?**
-  - **AWS:** 12 months free (t2.micro/t3.micro). Ideal for dev, test, or early production.
-  - **Google Cloud:** Micro VM free tier (limited resources, good for learning/testing).
-  - **Azure:** Free trial credits for new accounts.
-  - **Hetzner, DigitalOcean, Vultr, Linode:** No free tier, but stable and affordable (from ~$4–$5/month).
-  - **Fly.io:** Small free tier (limited CPU/memory/persistence), suitable for demos or light production—may require upgrade for heavy use.
-- **Best for:** Production bots needing always-on uptime, scheduled notifications, and persistent DB.
-
----
+When choosing a platform for hosting BTC Price Bot, several options were considered. Here’s a practical comparison, 
+with final production decision highlighted.
 
 ### Home Server or Always-on PC
 
-- Good for personal development, hobby, or private demo.
+- **Good for:** Personal development, hobby use, or private demos.
 - **Pros:** Free, full control, persistent storage.
-- **Cons:** Not as reliable as cloud (risk of downtime, hardware/network issues).
+- **Cons:** Less reliable than cloud hosting (prone to downtime, hardware/network issues, and limited remote access).
 
 ---
 
@@ -53,9 +43,34 @@ For basic installation and running instructions, see [Getting Started](../README
 
 ---
 
-> **Summary:**  
-> For BTC Price Bot, a VPS/cloud server should be used for production and real users (e.g., AWS, Hetzner, Fly.io with paid plan).  
-> Free platforms are *not* suitable for bots with scheduled/background jobs or persistent storage needs.
+### VPS / Cloud Servers (Recommended)
+
+- **Examples:** AWS EC2/Lightsail, Hetzner, DigitalOcean, Yandex.Cloud, Vultr, Linode, Azure, Google Cloud, Fly.io, etc.
+- **Pros:** Always-on, persistent storage, Docker support, full control, no artificial sleep limits.
+- **Free Tier/Trial?**
+    - **AWS:** 12 months free (t2.micro/t3.micro). Ideal for dev, test, or early production.
+    - **Google Cloud:** Micro VM free tier (limited resources, best for learning/testing).
+    - **Azure:** Free trial credits for new accounts.
+    - **Hetzner, DigitalOcean, Vultr, Linode:** No free tier, but stable and affordable (from ~$4–$5/month).
+    - **Fly.io:** Small free tier (limited CPU/memory/persistence), suitable for demos or light production—may require upgrade for heavy use.
+- **Best for:** Production bots needing always-on uptime, scheduled notifications, and persistent DB.
+
+---
+
+### Production Choice for BTC Price Bot: AWS EC2
+
+> **BTC Price Bot is deployed in production on an [AWS EC2](https://aws.amazon.com/ec2/) instance (t3.micro, Ubuntu 24.04), using Docker Compose and persistent EBS volumes for database storage.**
+
+**Why AWS EC2?**
+- **12 months Free Tier**: Covers one always-on micro instance (750 hours/month).
+- **Full Docker & Compose support**: Industry-standard and easy to automate.
+- **Reliable persistent storage**: With EBS volumes, backups are simple.
+- **Scalability**: Easy to scale up resources or migrate as needed.
+- **Cloud monitoring & billing**: Proactive resource/budget management via AWS tools.
+
+> **Bottom Line:**  
+> BTC Price Bot is currently hosted 24/7 on AWS EC2 for maximum reliability, persistence, and cost efficiency.  
+> For real-world, always-on, persistent bots, cloud VPS (especially AWS Free Tier) is the recommended platform.
 
 ---
 
@@ -66,7 +81,8 @@ For basic installation and running instructions, see [Getting Started](../README
 - **Auto-Restart:**  
   Compose services can be configured to always restart on failure.
 - **Volume Mapping:**  
-  Persistent data (DB/logs) should be mapped to host volumes for reliability.
+  Persistent data (DB/logs) should be mapped to host volumes for reliability. Be sure to mount only the persistent data 
+  subfolder.
 
 The project includes a ready-to-use [`docker-compose.yml`](../docker-compose.yml).
 

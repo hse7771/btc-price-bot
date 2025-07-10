@@ -76,11 +76,12 @@ programming techniques with a user-friendly, interactive chat interface and a sc
 BTC Price Bot is more than just a price tracker — it is a showcase of:
 
 - Modern asynchronous Python application design  
-- Real-world integration of payment processing and subscription management  
-- Complex timezone-aware scheduling in a global user environment  
 - Clean, maintainable, and well-documented codebase suitable for production deployment  
 - Strong developer discipline in version control and code quality practices  
 - Managing a full production deployment pipeline, including Docker containerization and environment configuration 
+- Deployment and real-world operations on cloud infrastructure (AWS EC2) using Docker Compose and persistent volumes
+- Real-world integration of payment processing and subscription management  
+- Complex timezone-aware scheduling in a global user environment  
 
 ### 🎥 Demo
 
@@ -94,8 +95,9 @@ BTC Price Bot is more than just a price tracker — it is a showcase of:
 - **Timecodes** are included in the video description for quick navigation to main features.
 
 Together, these facets reflect a professional approach to software development — from initial design and 
-coding standards to scalable deployment and maintenance. This project demonstrates comprehensive skills 
-in backend development, API integration, and system design.
+coding standards to scalable deployment and ongoing maintenance.
+This project demonstrates comprehensive skills in backend development, API integration, system architecture, continuous 
+integration and deployment (CI/CD), and modern cloud hosting (using AWS).
 
 ---
 
@@ -110,6 +112,7 @@ in backend development, API integration, and system design.
 * [![timezonefinder][Timezonefinder-badge]][Timezonefinder-url]
 * [![pytz][Pytz-badge]][Pytz-url]
 * [![Docker][Docker-badge]][Docker-url]
+* [![AWS EC2][AWS-badge]][AWS-url]
 * [![pre-commit][Precommit-badge]][Precommit-url]
 * [![flake8][Flake8-badge]][Flake8-url]
 * [![isort][Isort-badge]][Isort-url][![BlackStyle][BlackStyle-badge]][Black-url]
@@ -120,6 +123,8 @@ in backend development, API integration, and system design.
 ## 🚀 Getting Started
 
 ### 🔗 Live Demo
+
+This bot is currently hosted on an [AWS EC2](https://aws.amazon.com/ec2/) instance (t3.micro, Ubuntu), using Docker Compose for deployment and persistent volumes for database storage.
 
 👉 [Launch the Bot on Telegram](https://t.me/BTCPricePriceBot)
 
@@ -163,6 +168,10 @@ in backend development, API integration, and system design.
    ```
 
 > The `.env` file is used inside the container to load credentials.
+
+> ⚠️ **Note:** In production, **mount only the database subfolder** (e.g., `db/database_files`) as a persistent volume.  
+> Mounting the entire `db/` folder as a volume will hide your code from the image and may cause import errors.
+
 
 #### 🐍 Plain Python
 
@@ -306,7 +315,10 @@ The author is not liable for any damages or losses arising from its use. See the
 [Docker-badge]: https://img.shields.io/badge/Docker-Ready-blue?logo=docker&style=for-the-badge
 [Docker-url]: https://www.docker.com/
 
-[Precommit-badge]: https://img.shields.io/badge/Git-Hooks-critical?logo=pre-commit&style=for-the-badge
+[AWS-badge]: https://img.shields.io/badge/AWS-EC2-FF9900?logo=amazon-aws&logoColor=white&style=for-the-badge
+[AWS-url]: https://aws.amazon.com/ec2/
+
+[Precommit-badge]: https://img.shields.io/badge/Git-Hooks-F05032?logo=git&logoColor=white&style=for-the-badge
 [Precommit-url]: https://pre-commit.com/
 
 [Flake8-badge]: https://img.shields.io/badge/Linter-flake8-red?style=for-the-badge
