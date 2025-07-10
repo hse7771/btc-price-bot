@@ -32,10 +32,10 @@
   - [🔑 Core Functionality](#-core-functionality)
   - [💡 Why This Project?](#-why-this-project)
   - [🎥 Demo](#-demo)
-- [🛠️ Built With](#-built-with)
+- [🧩 Built With](#-built-with)
 - [🚀 Getting Started](#-getting-started)
   - [🔗 Live Demo](#-live-demo)
-  - [⚙️ Local Setup](#-local-setup)
+  - [🔧 Local Setup](#-local-setup)
     - [🐳 Docker](#-docker)
     - [🐍 Plain Python](#-plain-python)
 - [📘 Documentation](#-documentation)
@@ -47,7 +47,7 @@
 - [🤝 Contributing](#-contributing)
   - [🔁 Contribution Workflow](#-contribution-workflow)
   - [✅ Guidelines](#-guidelines)
-  - [🛠️ Developer Standards](#-developer-standards)
+  - [💻 Developer Standards](#-developer-standards)
 - [📄 License](#-license)
 - [📬 Contact](#-contact)
 
@@ -101,7 +101,7 @@ integration and deployment (CI/CD), and modern cloud hosting (using AWS).
 
 ---
 
-## 🛠️ Built With
+## 🧩 Built With
 
 * [![Python][Python-badge]][Python-url]
 * [![Telegram][Telegram-badge]][Telegram-url]
@@ -131,7 +131,7 @@ This bot is currently hosted on an [AWS EC2](https://aws.amazon.com/ec2/) instan
 > You can check BTC prices, choose your currencies, and test both subscription types (base + personal plans).  
 > Upgrade and donation features are enabled in sandbox/test mode.
 
-### ⚙️ Local Setup
+### 🔧 Local Setup
 
 > Make sure you have **Python 3.10+** and `pip` installed.
 
@@ -253,7 +253,7 @@ the documentation — please follow these steps:
 - Keep PRs focused and scoped — one topic per PR
 - Be respectful in code reviews and discussions
 
-### 🛠️ Developer Standards
+### 💻 Developer Standards
 
 This project uses:
 
