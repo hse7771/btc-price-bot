@@ -30,7 +30,7 @@ async def build_currency_keyboard(user_id: int) -> InlineKeyboardMarkup:
 
     # Done + Clear row
     buttons.append([
-        InlineKeyboardButton("❌ Close", callback_data="close_menu"),
+        InlineKeyboardButton("⬅️ Back", callback_data="close_menu"),
         InlineKeyboardButton("🗑️ Clear", callback_data="currency_clear")
     ])
 
